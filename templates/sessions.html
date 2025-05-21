@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+    <title>Class Sessions</title>
+</head>
+<body>
+    <h1>All Class Sessions</h1>
+    <p><a href="{{ url_for('create_session') }}">Create New Session</a></p>
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>ID</th>
+            <th>Class Name</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Live Status</th>
+            <th>Actions</th>
+        </tr>
+        {% for session in sessions %}
+        <tr>
+            <td>{{ session.id }}</td>
+            <td>{{ session.class_name }}</td>
+            <td>{{ session.start_time if session.start_time else '-' }}</td>
+            <td>{{ session.end_time if session.end_time else '-' }}</td>
+            <td>{{ 'Live' if session.is_live else 'Offline' }}</td>
+            <td>
+                {% if not session.is_live %}
+                    <a href="{{ url_for('start_session', session_id=session.id) }}">Start</a>
+                {% else %}
+                    <a href="{{ url_for('end_session', session_id=session.id) }}">End</a>
+                {% endif %}
+                | <a href="{{ url_for('join_session', session_id=session.id) }}">Join</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

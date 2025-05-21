@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+    <title>Create Class Session</title>
+</head>
+<body>
+    <h1>Create a New Class Session</h1>
+    <form method="POST">
+        <label>Class Name:</label><br>
+        <input type="text" name="class_name" required><br><br>
+        <button type="submit">Create Session</button>
+    </form>
+    <p><a href="{{ url_for('sessions') }}">Back to Sessions List</a></p>
+</body>
+</html>
