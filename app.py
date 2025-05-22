@@ -1,12 +1,21 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///classes.db'
+
+# --- Fix DATABASE_URL for SQLAlchemy compatibility ---
+db_url = os.environ.get('DATABASE_URL')
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
+# --- Database Model ---
 class ClassSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     class_name = db.Column(db.String(100), nullable=False)
@@ -14,6 +23,7 @@ class ClassSession(db.Model):
     end_time = db.Column(db.DateTime, nullable=True)
     is_live = db.Column(db.Boolean, default=False)
 
+# --- Routes ---
 @app.route('/')
 def index():
     return redirect(url_for('sessions'))
@@ -56,7 +66,3 @@ def join_session(session_id):
         return render_template('join_session.html', session=session)
     else:
         return "This session is not live right now."
-
-if __name__ == '__main__':
-    db.create_all()
-    app.run(host='0.0.0.0', port=10000)
