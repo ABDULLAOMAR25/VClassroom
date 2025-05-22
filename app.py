@@ -22,6 +22,12 @@ class ClassSession(db.Model):
     start_time = db.Column(db.DateTime, nullable=True)
     end_time = db.Column(db.DateTime, nullable=True)
     is_live = db.Column(db.Boolean, default=False)
+# --- User Model for Login ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(10), nullable=False)  # 'student', 'teacher', or 'admin'
 
 # --- Routes ---
 @app.route('/')
