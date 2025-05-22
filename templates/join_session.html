@@ -1,12 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Join Class Session</title>
+    <title>Join Session</title>
 </head>
 <body>
-    <h1>Welcome to live class: {{ session.class_name }}</h1>
-    <p>Session started at: {{ session.start_time }}</p>
-    <p>This is a placeholder page for your live class content.</p>
-    <p><a href="{{ url_for('sessions') }}">Back to Sessions</a></p>
+    <h1>Joining Session: {{ session.class_name }}</h1>
+    <p>The session is live.</p>
+    <p>Started at: {{ session.start_time }}</p>
+    <a href="{{ url_for('sessions') }}">← Back to Sessions</a>
 </body>
 </html>
