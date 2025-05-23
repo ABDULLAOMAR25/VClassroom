@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Dashboard</title>
+</head>
+<body>
+    <h2>👩‍🏫 Welcome, Teacher!</h2>
+    <nav>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </nav>
+    <ul>
+        <li><a href="{{ url_for('create_session') }}">➕ Create Session</a></li>
+        <li><a href="{{ url_for('sessions') }}">📋 Manage Sessions</a></li>
+        <li><a href="#">📚 Upload Materials</a></li>
+    </ul>
+</body>
+</html>

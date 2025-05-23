@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Dashboard</title>
+</head>
+<body>
+    <h2>🎓 Welcome, Student!</h2>
+    <nav>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </nav>
+    <ul>
+        <li><a href="{{ url_for('sessions') }}">📅 View Sessions</a></li>
+        <li><a href="#">📥 Assignments</a></li>
+        <li><a href="#">📊 Progress</a></li>
+    </ul>
+</body>
+</html>
