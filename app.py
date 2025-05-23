@@ -25,8 +25,10 @@ class ClassSession(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(10), nullable=False)
+    reset_code = db.Column(db.String(100), nullable=True)
 
 # --- Routes ---
 @app.route('/')
@@ -39,16 +41,38 @@ def index():
 def login():
     if request.method == 'POST':
         username = request.form['username']
+        email  = request.form['email']
         password = request.form['password']
         role = request.form['role']
 
-        user = User.query.filter_by(username=username, password=password, role=role).first()
+        user = User.query.filter_by(username=username, email=email, password=password, role=role).first()
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
             return redirect(url_for('dashboard'))
         return "Invalid credentials"
     return render_template('login.html')
+ 
+@app.route('/reset-password/<code>', methods=['GET', 'POST'])
+def reset_password(code):
+    user = User.query.filter_by(reset_code=code).first()
+    if not user:
+        return "Invalid or expired reset code."
+
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            return "Passwords do not match."
+
+        user.password = new_password  # Hash this in production
+        user.reset_code = None
+        db.session.commit()
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', code=code)
+
 
 @app.route('/dashboard')
 def dashboard():
