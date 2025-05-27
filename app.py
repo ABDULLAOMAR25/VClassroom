@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 
-app = Flask(__name__)
+# Explicitly tell Flask where static and templates folders are
+app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = 'your_secret_key'
 
 # --- Database Configuration ---
@@ -41,7 +42,7 @@ def index():
 def login():
     if request.method == 'POST':
         username = request.form['username']
-        email  = request.form['email']
+        email = request.form['email']
         password = request.form['password']
         role = request.form['role']
 
@@ -52,7 +53,7 @@ def login():
             return redirect(url_for('dashboard'))
         return "Invalid credentials"
     return render_template('login.html')
- 
+
 @app.route('/reset-password/<code>', methods=['GET', 'POST'])
 def reset_password(code):
     user = User.query.filter_by(reset_code=code).first()
@@ -72,7 +73,6 @@ def reset_password(code):
         return redirect(url_for('login'))
 
     return render_template('reset_password.html', code=code)
-
 
 @app.route('/dashboard')
 def dashboard():
