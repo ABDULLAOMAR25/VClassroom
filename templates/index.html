@@ -1,44 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | Virtual Classroom</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body style="margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; background: linear-gradient(120deg, #007bff, #00c6ff); display: flex; justify-content: center; align-items: center;">
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <h2>Virtual Classroom</h2>
+      <form method="POST" action="{{ url_for('login') }}">
+        <label for="username">Email or Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required>
 
-  <div style="background-color: #fff; padding: 30px 20px; border-radius: 15px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px;">
-    <h2 style="text-align: center; margin-bottom: 25px; color: #007bff;">Virtual Classroom</h2>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
 
-    <form method="POST" action="{{ url_for('login') }}">
-      <label for="username" style="display: block; margin-bottom: 5px; color: #333;">Email or Username</label>
-      <input type="text" id="username" name="username" placeholder="Enter your username" required
-             style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px;">
+        <label for="role">Role</label>
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
 
-      <label for="password" style="display: block; margin-bottom: 5px; color: #333;">Password</label>
-      <input type="password" id="password" name="password" placeholder="Enter your password" required
-             style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px;">
+        <button type="submit">Login</button>
 
-      <label for="role" style="display: block; margin-bottom: 5px; color: #333;">Role</label>
-      <select id="role" name="role" required
-              style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px;">
-        <option value="" disabled selected>Select your role</option>
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-        <option value="admin">Admin</option>
-      </select>
-
-      <button type="submit"
-              style="width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; border-radius: 8px; font-size: 16px; cursor: pointer;">
-        Login
-      </button>
-
-      <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-        <a href="{{ url_for('forgot_password') }}" style="color: #007bff; text-decoration: none; font-size: 14px;">Forgot Password?</a>
-        <a href="#" style="color: #007bff; text-decoration: none; font-size: 14px;">Create Account</a>
-      </div>
-    </form>
+        <div class="login-links">
+          <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+          <a href="#">Create Account</a>
+        </div>
+      </form>
+    </div>
   </div>
-
 </body>
 </html>
