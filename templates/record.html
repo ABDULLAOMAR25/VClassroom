@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Record Screen + Webcam</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 20px;
+    }
+    video {
+      width: 90%;
+      max-width: 700px;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Record Screen + Webcam + Mic</h2>
+
+  <!-- Webcam preview (separate) -->
+  <video id="webcamPreview" autoplay muted style="width: 200px; position: fixed; top: 20px; right: 20px; border: 2px solid #007bff;"></video>
+
+  <!-- Final output preview -->
+  <video id="finalPreview" autoplay muted></video><br>
+
+  <button onclick="startRecording()">Start Recording</button>
+  <button onclick="stopRecording()">Stop Recording</button>
+  <a id="downloadLink" style="display:none" download="recording.webm">Download Recording</a>
+
+  <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    let combinedStream;
+    let webcamStream;
+    let screenStream;
+
+    async function startRecording() {
+      // Get webcam + mic
+      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById("webcamPreview").srcObject = webcamStream;
+
+      // Get screen
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+
+      // Merge streams
+      const tracks = [
+        ...screenStream.getVideoTracks(),
+        ...webcamStream.getAudioTracks()
+      ];
+
+      combinedStream = new MediaStream(tracks);
+      document.getElementById("finalPreview").srcObject = combinedStream;
+
+      // Start recording
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(combinedStream);
+
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const link = document.getElementById('downloadLink');
+        link.href = url;
+        link.style.display = 'inline-block';
+      };
+
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      screenStream.getTracks().forEach(track => track.stop());
+      webcamStream.getTracks().forEach(track => track.stop());
+    }
+  </script>
+</body>
+</html>

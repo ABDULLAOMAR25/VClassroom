@@ -1,12 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Join Session</title>
+  <title>Join Live Session</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    video {
+      width: 60%;
+      margin: 10px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #999;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 10px 0 0;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-    <h1>Joining Session: {{ session.class_name }}</h1>
-    <p>The session is live.</p>
-    <p>Started at: {{ session.start_time }}</p>
-    <a href="{{ url_for('sessions') }}">← Back to Sessions</a>
+  <h2>Live Class Session</h2>
+
+  <video id="preview" autoplay muted playsinline></video>
+  <br>
+
+  <button onclick="toggleCamera()">Toggle Camera</button>
+  <button onclick="toggleMic()">Toggle Mic</button>
+  <button onclick="startRecording()">Start Recording</button>
+  <button onclick="stopRecording()">Stop & Download</button>
+
+  <script>
+    let stream;
+    let recorder;
+    let recordedChunks = [];
+    let videoTrack;
+    let audioTrack;
+
+    async function initMedia() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('preview').srcObject = stream;
+
+        // Save tracks for toggle
+        videoTrack = stream.getVideoTracks()[0];
+        audioTrack = stream.getAudioTracks()[0];
+      } catch (e) {
+        alert("Camera/Mic access denied or unavailable.");
+        console.error(e);
+      }
+    }
+
+    function toggleCamera() {
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+      }
+    }
+
+    function toggleMic() {
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+      }
+    }
+
+    function startRecording() {
+      recordedChunks = [];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = event => {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'class_recording.webm';
+        a.click();
+      };
+      recorder.start();
+      alert('Recording started.');
+    }
+
+    function stopRecording() {
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+    }
+
+    initMedia();
+  </script>
 </body>
 </html>
