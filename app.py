@@ -1,11 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from livekit_api import AccessToken, VideoGrant
 from datetime import datetime
+from dotenv import load_dotenv
 import os
+
+# Load environment variables
+load_dotenv()
 
 # Explicitly tell Flask where static and templates folders are
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = 'your_secret_key'
+
+# --- LiveKit Configuration ---
+API_KEY = os.getenv("LIVEKIT_API_KEY")
+API_SECRET = os.getenv("LIVEKIT_API_SECRET")
+LIVEKIT_URL = os.getenv("LIVEKIT_URL")
 
 # --- Database Configuration ---
 db_url = os.environ.get('DATABASE_URL')
@@ -13,6 +23,7 @@ if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # --- Models ---
@@ -67,7 +78,7 @@ def reset_password(code):
         if new_password != confirm_password:
             return "Passwords do not match."
 
-        user.password = new_password  # Hash this in production
+        user.password = new_password
         user.reset_code = None
         db.session.commit()
         return redirect(url_for('login'))
@@ -134,6 +145,17 @@ def join_session(session_id):
         return render_template('join_session.html', session=session_obj)
     else:
         return "This session is not live right now."
+
+@app.route('/get_token', methods=['POST'])
+def get_token():
+    data = request.get_json()
+    identity = data.get('identity')
+    room = data.get('room')
+
+    at = AccessToken(API_KEY, API_SECRET, identity=identity)
+    at.add_grant(VideoGrant(room=room))
+    token = at.to_jwt()
+    return jsonify({'token': token, 'url': LIVEKIT_URL})
 
 if __name__ == '__main__':
     with app.app_context():

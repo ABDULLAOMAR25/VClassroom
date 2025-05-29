@@ -1,102 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Join Live Session</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-    video {
-      width: 60%;
-      margin: 10px 0;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #999;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px 10px 0 0;
-      border: none;
-      border-radius: 5px;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+    <title>Join Session</title>
+    <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
+    <style>
+        video {
+            width: 45%;
+            margin: 10px;
+            border-radius: 10px;
+        }
+        #controls button {
+            margin: 5px;
+        }
+    </style>
 </head>
 <body>
-  <h2>Live Class Session</h2>
+    <h1>Live Class Session: {{ session.class_name }}</h1>
 
-  <video id="preview" autoplay muted playsinline></video>
-  <br>
+    <div id="video-container">
+        <video id="local-video" autoplay muted></video>
+        <video id="remote-video" autoplay></video>
+    </div>
 
-  <button onclick="toggleCamera()">Toggle Camera</button>
-  <button onclick="toggleMic()">Toggle Mic</button>
-  <button onclick="startRecording()">Start Recording</button>
-  <button onclick="stopRecording()">Stop & Download</button>
+    <div id="controls">
+        <button onclick="toggleCamera()">Toggle Camera</button>
+        <button onclick="toggleMic()">Toggle Mic</button>
+    </div>
 
-  <script>
-    let stream;
-    let recorder;
-    let recordedChunks = [];
-    let videoTrack;
-    let audioTrack;
+    <script>
+        const roomName = "classroom_{{ session.id }}";
+        const identity = prompt("Enter your name:");
 
-    async function initMedia() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('preview').srcObject = stream;
+        fetch('/get_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity, room: roomName })
+        })
+        .then(res => res.json())
+        .then(async ({ token, url }) => {
+            const room = new Livekit.Room();
 
-        // Save tracks for toggle
-        videoTrack = stream.getVideoTracks()[0];
-        audioTrack = stream.getAudioTracks()[0];
-      } catch (e) {
-        alert("Camera/Mic access denied or unavailable.");
-        console.error(e);
-      }
-    }
+            room.on("trackSubscribed", (track, publication, participant) => {
+                if (track.kind === "video") {
+                    const remoteVideo = document.getElementById("remote-video");
+                    track.attach(remoteVideo);
+                }
+            });
 
-    function toggleCamera() {
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-      }
-    }
+            await room.connect(url, token);
 
-    function toggleMic() {
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-      }
-    }
+            const localTracks = await Livekit.createLocalTracks({
+                audio: true,
+                video: true
+            });
 
-    function startRecording() {
-      recordedChunks = [];
-      recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = event => {
-        if (event.data.size > 0) recordedChunks.push(event.data);
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'class_recording.webm';
-        a.click();
-      };
-      recorder.start();
-      alert('Recording started.');
-    }
+            for (let track of localTracks) {
+                await room.localParticipant.publishTrack(track);
+                if (track.kind === "video") {
+                    track.attach(document.getElementById("local-video"));
+                }
+            }
 
-    function stopRecording() {
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop();
-      }
-    }
+            window.room = room;
+            window.localTracks = localTracks;
+        });
 
-    initMedia();
-  </script>
+        function toggleCamera() {
+            const videoTrack = window.localTracks.find(t => t.kind === 'video');
+            if (videoTrack) videoTrack.isEnabled ? videoTrack.disable() : videoTrack.enable();
+        }
+
+        function toggleMic() {
+            const audioTrack = window.localTracks.find(t => t.kind === 'audio');
+            if (audioTrack) audioTrack.isEnabled ? audioTrack.disable() : audioTrack.enable();
+        }
+    </script>
 </body>
 </html>
