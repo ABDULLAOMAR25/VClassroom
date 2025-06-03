@@ -3,6 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from livekit_api import AccessToken, VideoGrant
 from datetime import datetime
 from dotenv import load_dotenv
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # ← this reads .env into os.environ
+
+API_KEY    = os.getenv("LIVEKIT_API_KEY")
+API_SECRET = os.getenv("LIVEKIT_API_SECRET")
+LIVEKIT_URL = os.getenv("LIVEKIT_URL")
+
 import os
 
 # Load environment variables
