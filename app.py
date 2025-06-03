@@ -5,6 +5,35 @@ from datetime import datetime
 from dotenv import load_dotenv
 from dotenv import load_dotenv
 import os
+import jwt
+import time
+
+# Replace with your actual credentials
+API_KEY = "LIVEKIT_API_KEY"
+API_SECRET = "LIVEKIT_API_SECRET"
+ROOM_NAME = ""
+USER_IDENTITY = ""
+
+# Expiration (1 hour from now)
+exp = int(time.time()) + 3600
+
+# JWT payload
+payload = {
+    "iss": API_KEY,
+    "exp": exp,
+    "video": {
+        "roomJoin": True,
+        "room": ROOM_NAME
+    },
+    "sub": USER_IDENTITY,
+    "jti": f"{USER_IDENTITY}-{int(time.time())}"
+}
+
+# Create JWT token
+token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+
+print("LiveKit Access Token:\n", token)
+
 
 load_dotenv()  # ← this reads .env into os.environ
 
