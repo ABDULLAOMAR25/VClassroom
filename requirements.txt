@@ -2,4 +2,4 @@ Flask
 Flask-SQLAlchemy
 gunicorn
 psycopg2-binary
-pip install livekit-server-sdk
+livekit-server-sdk
