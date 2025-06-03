@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from livekit_api import AccessToken, VideoGrant
+from livekit_server_sdk import AccessToken, VideoGrant
 from datetime import datetime
 from dotenv import load_dotenv
 from dotenv import load_dotenv
