@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from livekit_jwt import AccessToken, VideoGrant
+from livekit import AccessToken, VideoGrant
 from datetime import datetime
 from dotenv import load_dotenv
 from dotenv import load_dotenv
@@ -13,13 +13,6 @@ API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
 
 import os
-
-grant = VideoGrant(room="test-room")
-token = AccessToken(api_key, api_secret, identity=identity, grants=[grant])
-
-# Get JWT
-jwt = token.to_jwt()
-print(jwt)
 
 # Load environment variables
 load_dotenv()
