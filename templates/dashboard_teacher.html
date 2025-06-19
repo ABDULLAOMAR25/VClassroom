@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Teacher Dashboard</title>
     <style>
         * {
@@ -11,7 +12,9 @@
         }
 
         body {
-            height: 100vh;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             background-color: #f4f6f9;
             padding: 30px 20px;
         }
@@ -28,6 +31,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         nav a {
@@ -48,6 +52,7 @@
             list-style: none;
             margin-top: 30px;
             padding: 0;
+            flex: 1;
         }
 
         ul li {
@@ -69,6 +74,32 @@
         ul li a:hover {
             color: #1abc9c;
         }
+
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 15px 10px;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ccc;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 600px) {
+            nav {
+                justify-content: center;
+            }
+
+            nav a {
+                flex: 1 1 100%;
+                text-align: center;
+            }
+
+            ul li a {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -82,5 +113,8 @@
         <li><a href="{{ url_for('sessions') }}">📋 Manage Sessions</a></li>
         <li><a href="#">📚 Upload Materials</a></li>
     </ul>
+    <footer>
+        &copy; 2025 Technologist TV | All Rights Reserved
+    </footer>
 </body>
 </html>
