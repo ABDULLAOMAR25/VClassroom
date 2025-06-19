@@ -243,6 +243,3 @@ def get_token():
 def init_db():
     db.create_all()
     return "✅ Database initialized!"
-
-if __name__ == '__main__':
-    app.run(debug=True)
