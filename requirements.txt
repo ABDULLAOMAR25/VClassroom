@@ -3,5 +3,6 @@ flask_sqlalchemy
 psycopg2-binary
 python-dotenv
 requests
+pyjwt
 livekit
 gunicorn
