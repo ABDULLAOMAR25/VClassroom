@@ -177,14 +177,13 @@ def init_db():
 
 # ✅ No app.run() here — Render uses Gunicorn
 
-@app.route('/create-user')
-def create_user():
-    new_user = User(
-        username='admin',
-        email='admin@example.com',
-        password='admin123',  # Store hashed password in real apps!
-        role='admin'
-    )
-    db.session.add(new_user)
+@app.route('/create-users')
+def create_users():
+    users = [
+        User(username='teacher1', email='teacher1@example.com', password='teach123', role='teacher'),
+        User(username='student1', email='student1@example.com', password='stud123', role='student'),
+        User(username='admin', email='admin@example.com', password='admin123', role='admin'),
+    ]
+    db.session.bulk_save_objects(users)
     db.session.commit()
-    return "✅ User created!"
+    return "✅ All users created!"
