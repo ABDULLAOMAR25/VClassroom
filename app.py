@@ -75,10 +75,8 @@ def reset_password(code):
     if request.method == 'POST':
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
-
         if new_password != confirm_password:
             return "Passwords do not match."
-
         user.password = new_password
         user.reset_code = None
         db.session.commit()
@@ -158,7 +156,7 @@ def get_token():
     room = data.get('room')
 
     at = AccessToken(API_KEY, API_SECRET, identity=identity)
-    at.add_grant(VideoGrants(room_join=True, room=room))
+    at.add_grant(VideoGrant(room_join=True, room=room))
     token = at.to_jwt()
     return jsonify({'token': token, 'url': LIVEKIT_URL})
 
@@ -166,3 +164,5 @@ def get_token():
 def init_db():
     db.create_all()
     return "✅ Database initialized!"
+
+# ✅ No app.run() here — Render uses Gunicorn
