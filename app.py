@@ -176,3 +176,15 @@ def init_db():
     return "✅ Database initialized!"
 
 # ✅ No app.run() here — Render uses Gunicorn
+
+@app.route('/create-user')
+def create_user():
+    new_user = User(
+        username='admin',
+        email='admin@example.com',
+        password='admin123',  # Store hashed password in real apps!
+        role='admin'
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    return "✅ User created!"
