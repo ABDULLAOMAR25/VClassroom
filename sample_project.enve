@@ -1,5 +1,6 @@
 FLASK_SECRET_KEY=your_secret_key
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
-LIVEKIT_URL=https://your.livekit.server
-DATABASE_URL=sqlite:///classes.db
+LIVEKIT_API_KEY=your_api_key
+LIVEKIT_API_SECRET=your_api_secret
+LIVEKIT_URL=https://your-livekit-url
+LIVEKIT_EGRESS_URL=https://your-livekit-egress-endpoint/start
+DATABASE_URL=postgresql://...
