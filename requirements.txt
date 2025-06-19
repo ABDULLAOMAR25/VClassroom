@@ -2,6 +2,6 @@ Flask
 Flask-SQLAlchemy
 gunicorn
 psycopg2-binary
-livekit-server-sdk
+livekit
 
 
