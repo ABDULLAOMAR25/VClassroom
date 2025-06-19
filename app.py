@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from livekit import AccessToken, VideoGrant
+import jwt
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 import os
@@ -155,9 +156,18 @@ def get_token():
     identity = data.get('identity')
     room = data.get('room')
 
-    at = AccessToken(API_KEY, API_SECRET, identity=identity)
-    at.add_grant(VideoGrant(room_join=True, room=room))
-    token = at.to_jwt()
+    payload = {
+        "jti": identity + str(int(time.time())),
+        "iss": API_KEY,
+        "sub": identity,
+        "exp": int(time.time()) + 3600,  # 1 hour expiration
+        "video": {
+            "room_join": True,
+            "room": room
+        }
+    }
+
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
     return jsonify({'token': token, 'url': LIVEKIT_URL})
 
 @app.route('/init-db')
