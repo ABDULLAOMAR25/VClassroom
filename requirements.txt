@@ -1,6 +1,8 @@
-flask
+Flask
 flask_sqlalchemy
+psycopg2-binary
 python-dotenv
 requests
 pyjwt
+livekit-server-sdk
 gunicorn
