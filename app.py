@@ -238,8 +238,5 @@ def get_token():
     at.add_grant(VideoGrants(room_join=True, room=room))
     token = at.to_jwt()
     return jsonify({'token': token, 'url': LIVEKIT_URL})
-
-@app.route('/init-db')
-def init_db():
-    db.create_all()
-    return "✅ Database initialized!"
+if __name__ == '__main__':
+    app.run(debug=True)
