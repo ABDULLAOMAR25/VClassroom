@@ -4,9 +4,6 @@ from livekit.api import AccessToken, VideoGrants
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import time
-import jwt
-import requests
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +16,6 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
-LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")
 
 # Database Configuration
 db_url = os.environ.get('DATABASE_URL')
@@ -31,7 +27,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize DB
 db = SQLAlchemy(app)
 
-# Models
+# --- Models ---
 class ClassSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     class_name = db.Column(db.String(100), nullable=False)
@@ -47,7 +43,7 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)
     reset_code = db.Column(db.String(100), nullable=True)
 
-# Routes
+# --- Routes ---
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -79,8 +75,10 @@ def reset_password(code):
     if request.method == 'POST':
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
+
         if new_password != confirm_password:
             return "Passwords do not match."
+
         user.password = new_password
         user.reset_code = None
         db.session.commit()
@@ -152,81 +150,6 @@ def join_session(session_id):
 @app.route('/record')
 def record():
     return "Recording feature coming soon!"
-
-@app.route('/start-recording/<room_name>', methods=['POST'])
-def start_recording(room_name):
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-        "video": {
-            "room_join": True
-        }
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    egress_payload = {
-        "room_name": room_name,
-        "layout": "grid",
-        "output": {
-            "file": {
-                "filepath": f"/recordings/{room_name}_{int(time.time())}.mp4"
-            }
-        }
-    }
-
-    response = requests.post(
-        LIVEKIT_EGRESS_URL,
-        headers=headers,
-        json=egress_payload
-    )
-
-    if response.status_code == 200:
-        result = response.json()
-        session['egress_id'] = result.get("egress_id")
-        return "✅ Recording started!"
-    else:
-        return f"❌ Failed to start recording: {response.text}", 500
-
-@app.route('/stop-recording', methods=['POST'])
-def stop_recording():
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    egress_id = session.get('egress_id')
-    if not egress_id:
-        return "⚠️ No active recording found."
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    stop_url = LIVEKIT_EGRESS_URL.replace('/start', '/stop')
-    response = requests.post(
-        stop_url,
-        headers=headers,
-        json={"egress_id": egress_id}
-    )
-
-    if response.status_code == 200:
-        session.pop('egress_id', None)
-        return "🛑 Recording stopped!"
-    else:
-        return f"❌ Failed to stop recording: {response.text}", 500
 
 @app.route('/get_token', methods=['POST'])
 def get_token():

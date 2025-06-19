@@ -1,79 +1,153 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Join Session</title>
-    <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
-    <style>
-        video {
-            width: 45%;
-            margin: 10px;
-            border-radius: 10px;
-        }
-        #controls button {
-            margin: 5px;
-        }
-    </style>
+  <title>Join Live Class</title>
+  <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f9;
+      color: #2c3e50;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      color: #2c3e50;
+    }
+
+    #video-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    video {
+      width: 45%;
+      max-width: 500px;
+      height: auto;
+      border-radius: 12px;
+      background-color: #000;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    #controls button {
+      font-size: 16px;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 8px;
+      background-color: #1abc9c;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #controls button:hover {
+      background-color: #16a085;
+    }
+
+    #controls button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-    <h1>Live Class Session: {{ session.class_name }}</h1>
+  <h1>Live Class Session: {{ session.class_name }}</h1>
 
-    <div id="video-container">
-        <video id="local-video" autoplay muted></video>
-        <video id="remote-video" autoplay></video>
-    </div>
+  <div id="video-container">
+    <video id="local-video" autoplay muted playsinline></video>
+    <video id="remote-video" autoplay playsinline></video>
+  </div>
 
-    <div id="controls">
-        <button onclick="toggleCamera()">Toggle Camera</button>
-        <button onclick="toggleMic()">Toggle Mic</button>
-    </div>
+  <div id="controls">
+    <button id="camera-btn" onclick="toggleCamera()">📷 Camera</button>
+    <button id="mic-btn" onclick="toggleMic()">🎤 Mic</button>
+  </div>
 
-    <script>
-        const roomName = "classroom_{{ session.id }}";
-        const identity = prompt("Enter your name:");
+  <script>
+    const roomName = "classroom_{{ session.id }}";
+    const identity = prompt("Enter your name:");
 
-        fetch('/get_token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity, room: roomName })
-        })
-        .then(res => res.json())
-        .then(async ({ token, url }) => {
-            const room = new Livekit.Room();
+    let cameraOn = true;
+    let micOn = true;
 
-            room.on("trackSubscribed", (track, publication, participant) => {
-                if (track.kind === "video") {
-                    const remoteVideo = document.getElementById("remote-video");
-                    track.attach(remoteVideo);
-                }
-            });
+    fetch('/get_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity, room: roomName })
+    })
+    .then(res => res.json())
+    .then(async ({ token, url }) => {
+      const room = new Livekit.Room();
 
-            await room.connect(url, token);
-
-            const localTracks = await Livekit.createLocalTracks({
-                audio: true,
-                video: true
-            });
-
-            for (let track of localTracks) {
-                await room.localParticipant.publishTrack(track);
-                if (track.kind === "video") {
-                    track.attach(document.getElementById("local-video"));
-                }
-            }
-
-            window.room = room;
-            window.localTracks = localTracks;
-        });
-
-        function toggleCamera() {
-            const videoTrack = window.localTracks.find(t => t.kind === 'video');
-            if (videoTrack) videoTrack.isEnabled ? videoTrack.disable() : videoTrack.enable();
+      room.on("trackSubscribed", (track, publication, participant) => {
+        if (track.kind === "video") {
+          const remoteVideo = document.getElementById("remote-video");
+          track.attach(remoteVideo);
         }
+      });
 
-        function toggleMic() {
-            const audioTrack = window.localTracks.find(t => t.kind === 'audio');
-            if (audioTrack) audioTrack.isEnabled ? audioTrack.disable() : audioTrack.enable();
+      await room.connect(url, token);
+
+      const localTracks = await Livekit.createLocalTracks({
+        audio: true,
+        video: true
+      });
+
+      for (let track of localTracks) {
+        await room.localParticipant.publishTrack(track);
+        if (track.kind === "video") {
+          track.attach(document.getElementById("local-video"));
         }
-    </script>
+      }
+
+      window.room = room;
+      window.localTracks = localTracks;
+    });
+
+    function toggleCamera() {
+      const videoTrack = window.localTracks.find(t => t.kind === 'video');
+      if (videoTrack) {
+        if (cameraOn) {
+          videoTrack.disable();
+          document.getElementById("camera-btn").innerText = "🚫📷 Camera Off";
+        } else {
+          videoTrack.enable();
+          document.getElementById("camera-btn").innerText = "📷 Camera";
+        }
+        cameraOn = !cameraOn;
+      }
+    }
+
+    function toggleMic() {
+      const audioTrack = window.localTracks.find(t => t.kind === 'audio');
+      if (audioTrack) {
+        if (micOn) {
+          audioTrack.disable();
+          document.getElementById("mic-btn").innerText = "🔇 Mic Off";
+        } else {
+          audioTrack.enable();
+          document.getElementById("mic-btn").innerText = "🎤 Mic";
+        }
+        micOn = !micOn;
+      }
+    }
+  </script>
 </body>
 </html>

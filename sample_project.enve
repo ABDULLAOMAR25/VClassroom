@@ -1,3 +1,5 @@
-LIVEKIT_URL=wss://live-classroom-0z8a7yns.livekit.cloud
-LIVEKIT_API_KEY=APIdraX8Mg4GjYd
-LIVEKIT_API_SECRET=your_actual_secret_here
+FLASK_SECRET_KEY=your_secret_key
+LIVEKIT_API_KEY=your_livekit_api_key
+LIVEKIT_API_SECRET=your_livekit_api_secret
+LIVEKIT_URL=https://your.livekit.server
+DATABASE_URL=sqlite:///classes.db
