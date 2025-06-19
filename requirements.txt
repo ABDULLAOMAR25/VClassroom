@@ -4,5 +4,5 @@ psycopg2-binary
 python-dotenv
 requests
 pyjwt
-livekit-server-sdk
+livekit
 gunicorn
