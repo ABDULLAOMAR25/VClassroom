@@ -1,31 +1,30 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from livekit.api import AccessToken, VideoGrants
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import time
-import jwt
-import requests
 
 # Load environment variables
 load_dotenv()
 
+# Flask App Setup
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 
-# --- LiveKit Config ---
+# LiveKit Config
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
-LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")
 
-# --- Database Configuration ---
+# Database Configuration
 db_url = os.environ.get('DATABASE_URL')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Initialize DB
 db = SQLAlchemy(app)
 
 # --- Models ---
@@ -76,8 +75,10 @@ def reset_password(code):
     if request.method == 'POST':
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
+
         if new_password != confirm_password:
             return "Passwords do not match."
+
         user.password = new_password
         user.reset_code = None
         db.session.commit()
@@ -89,8 +90,16 @@ def reset_password(code):
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
     role = session.get('role')
-    return render_template(f'dashboard_{role}.html')
+    if role == 'student':
+        return render_template('dashboard_student.html')
+    elif role == 'teacher':
+        return render_template('dashboard_teacher.html')
+    elif role == 'admin':
+        return render_template('dashboard_admin.html')
+    else:
+        return "Unknown role"
 
 @app.route('/logout')
 def logout():
@@ -135,71 +144,12 @@ def join_session(session_id):
     session_obj = ClassSession.query.get_or_404(session_id)
     if session_obj.is_live:
         return render_template('join_session.html', session=session_obj)
-    return "This session is not live right now."
+    else:
+        return "This session is not live right now."
 
-# --- LiveKit Recording and Token ---
-@app.route('/start-recording/<room_name>', methods=['POST'])
-def start_recording(room_name):
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-        "video": {"room_join": True}
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    egress_payload = {
-        "room_name": room_name,
-        "layout": "grid",
-        "output": {
-            "file": {
-                "filepath": f"/recordings/{room_name}_{int(time.time())}.mp4"
-            }
-        }
-    }
-
-    response = requests.post(LIVEKIT_EGRESS_URL, headers=headers, json=egress_payload)
-
-    if response.status_code == 200:
-        result = response.json()
-        session['egress_id'] = result.get("egress_id")
-        return "✅ Recording started!"
-    return f"❌ Failed to start recording: {response.text}", 500
-
-@app.route('/stop-recording', methods=['POST'])
-def stop_recording():
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    egress_id = session.get('egress_id')
-    if not egress_id:
-        return "⚠️ No active recording found."
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    stop_url = LIVEKIT_EGRESS_URL.replace('/start', '/stop')
-    response = requests.post(stop_url, headers=headers, json={"egress_id": egress_id})
-
-    if response.status_code == 200:
-        session.pop('egress_id', None)
-        return "🛑 Recording stopped!"
-    return f"❌ Failed to stop recording: {response.text}", 500
+@app.route('/record')
+def record():
+    return "Recording feature coming soon!"
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
@@ -207,18 +157,15 @@ def get_token():
     identity = data.get('identity')
     room = data.get('room')
 
-    payload = {
-        "iss": API_KEY,
-        "sub": identity,
-        "video": {"room_join": True, "room": room},
-        "exp": int(time.time()) + 3600
-    }
-
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+    at = AccessToken(API_KEY, API_SECRET, identity=identity)
+    at.add_grant(VideoGrants(room_join=True, room=room))
+    token = at.to_jwt()
     return jsonify({'token': token, 'url': LIVEKIT_URL})
 
-# --- Run ---
+@app.route('/init-db')
+def init_db():
+    db.create_all()
+    return "✅ Database initialized!"
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
