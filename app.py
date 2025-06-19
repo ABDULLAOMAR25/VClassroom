@@ -176,7 +176,6 @@ def init_db():
     return "✅ Database initialized!"
 
 # ✅ No app.run() here — Render uses Gunicorn
-
 @app.route('/create-users')
 def create_users():
     users = [
