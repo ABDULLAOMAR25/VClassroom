@@ -1,7 +1,6 @@
-Flask
-Flask-SQLAlchemy
+flask
+flask_sqlalchemy
+python-dotenv
+requests
+pyjwt
 gunicorn
-psycopg2-binary
-livekit
-
-

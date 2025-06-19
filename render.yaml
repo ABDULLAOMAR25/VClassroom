@@ -1,9 +1,19 @@
 services:
   - type: web
     name: online-classroom
-    runtime: python
+    env: python
     buildCommand: ""
-    startCommand: gunicorn app:app --bind 0.0.0.0:10000
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
-      - key: FLASK_ENV
-        value: production
+      - key: FLASK_SECRET_KEY
+        value: your_secret_key
+      - key: LIVEKIT_API_KEY
+        value: your_livekit_api_key
+      - key: LIVEKIT_API_SECRET
+        value: your_livekit_api_secret
+      - key: LIVEKIT_URL
+        value: https://your-livekit-server-url
+      - key: LIVEKIT_EGRESS_URL
+        value: https://your-livekit-server/egress/start
+      - key: DATABASE_URL
+        value: your_database_url_here  # If using PostgreSQL on Render
