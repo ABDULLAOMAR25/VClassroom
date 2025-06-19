@@ -188,3 +188,8 @@ def create_user():
     return "✅ User created!"
 
 # ✅ No app.run() here — Render uses Gunicorn
+
+@app.route('/list-users')
+def list_users():
+    users = User.query.all()
+    return jsonify([{"username": u.username, "email": u.email, "role": u.role} for u in users])
