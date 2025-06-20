@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Teacher Dashboard</title>
     <style>
         * {
@@ -48,11 +49,14 @@
             background-color: #149174;
         }
 
+        main {
+            flex: 1;
+        }
+
         ul {
             list-style: none;
             margin-top: 30px;
             padding: 0;
-            flex: 1;
         }
 
         ul li {
@@ -104,17 +108,22 @@
 </head>
 <body>
     <h2>👩‍🏫 Welcome, Teacher!</h2>
-    <nav>
+
+    <nav aria-label="Teacher navigation">
         <a href="{{ url_for('record') }}">📹 Record Your Class</a>
         <a href="{{ url_for('logout') }}">🚪 Logout</a>
     </nav>
-    <ul>
-        <li><a href="{{ url_for('create_session') }}">➕ Create Session</a></li>
-        <li><a href="{{ url_for('sessions') }}">📋 Manage Sessions</a></li>
-        <li><a href="{{ url_for('upload') }}">📚 Upload Materials</a></li>
-    </ul>
+
+    <main>
+        <ul>
+            <li><a href="{{ url_for('create_session') }}">➕ Create Session</a></li>
+            <li><a href="{{ url_for('sessions') }}">📋 Manage Sessions</a></li>
+            <li><a href="{{ url_for('upload') }}">📚 Upload Materials</a></li>
+        </ul>
+    </main>
+
     <footer>
-        &copy; 2025 Vertual classroom | All Rights Reserved
+        &copy; 2025 Virtual Classroom | All Rights Reserved
     </footer>
 </body>
 </html>
