@@ -14,8 +14,14 @@
 
     body {
       display: flex;
+      flex-direction: column;
       min-height: 100vh;
       background-color: #f4f6f9;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
     }
 
     .sidebar {
@@ -23,6 +29,7 @@
       background-color: #2c3e50;
       color: #ecf0f1;
       padding: 20px;
+      flex-shrink: 0;
     }
 
     .sidebar h2 {
@@ -40,13 +47,19 @@
       margin-bottom: 10px;
       background-color: #34495e;
       border-radius: 5px;
-      cursor: pointer;
       transition: background-color 0.3s;
     }
 
     .sidebar ul li:hover,
     .sidebar ul .active {
       background-color: #1abc9c;
+    }
+
+    .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      width: 100%;
     }
 
     .main {
@@ -68,13 +81,14 @@
       display: flex;
       gap: 20px;
       margin-top: 30px;
+      flex-wrap: wrap;
     }
 
     .card {
       background-color: white;
       padding: 20px;
       border-radius: 10px;
-      flex: 1;
+      flex: 1 1 300px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       transition: transform 0.2s;
     }
@@ -106,50 +120,85 @@
     .card button:hover {
       background-color: #16a085;
     }
-    .sidebar ul li a {
-  color: inherit;
-  text-decoration: none;
-  display: block;
-  width: 100%;
-}
+
+    footer {
+      text-align: center;
+      padding: 15px 10px;
+      background-color: #ecf0f1;
+      color: #7f8c8d;
+      font-size: 14px;
+      border-top: 1px solid #ccc;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        text-align: center;
+      }
+
+      .sidebar ul li {
+        display: inline-block;
+        width: 48%;
+        margin: 5px 1%;
+      }
+
+      .cards {
+        flex-direction: column;
+      }
+
+      .main {
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-  <h2>📘 V-Class</h2>
-  <ul>
-    <li class="active"><a href="dashboard.html">🏠 Dashboard</a></li>
-    <li><a href="login.html" >📚 My Courses</a></li>
-    <li><a href="login.html">🎥 Join Class</a></li>
-    <li><a href="login.html">📝 Assignments</a></li>
-    <li><a href="#">👤 Profile</a></li>
-    <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
-  </ul>
-</div>
+  <div class="container">
+    <div class="sidebar">
+      <h2>📘 V-Class</h2>
+      <ul>
+        <li class="active"><a href="dashboard.html">🏠 Dashboard</a></li>
+        <li><a href="login.html">📚 My Courses</a></li>
+        <li><a href="login.html">🎥 Join Class</a></li>
+        <li><a href="login.html">📝 Assignments</a></li>
+        <li><a href="#">👤 Profile</a></li>
+        <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
+      </ul>
+    </div>
 
-  <div class="main">
-    <header>
-      <h1>Welcome, Student!</h1>
-      <p>Your Virtual Learning Hub</p>
-    </header>
+    <div class="main">
+      <header>
+        <h1>Welcome, Student!</h1>
+        <p>Your Virtual Learning Hub</p>
+      </header>
 
-    <section class="cards">
-      <div class="card">
-        <h3>Upcoming Class</h3>
-        <p>Physics at 10:00 AM</p>
-        <button>Join Now</button>
-      </div>
-      <div class="card">
-        <h3>New Assignment</h3>
-        <p>Math Homework #3</p>
-        <button>Submit</button>
-      </div>
-      <div class="card">
-        <h3>Progress</h3>
-        <p>75% Course Completed</p>
-        <button>View Report</button>
-      </div>
-    </section>
+      <section class="cards">
+        <div class="card">
+          <h3>Upcoming Class</h3>
+          <p>Physics at 10:00 AM</p>
+          <button>Join Now</button>
+        </div>
+        <div class="card">
+          <h3>New Assignment</h3>
+          <p>Math Homework #3</p>
+          <button>Submit</button>
+        </div>
+        <div class="card">
+          <h3>Progress</h3>
+          <p>75% Course Completed</p>
+          <button>View Report</button>
+        </div>
+      </section>
+    </div>
   </div>
+
+  <footer>
+    &copy; 2025 Vertual Classroom | All Rights Reserved
+  </footer>
 </body>
 </html>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Online Classroom Sessions</title>
     <style>
         * {
@@ -11,6 +13,9 @@
         }
 
         body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             background-color: #f4f6f9;
             padding: 30px 20px;
             color: #2c3e50;
@@ -32,13 +37,28 @@
             text-decoration: underline;
         }
 
+        .top-link {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            padding: 10px 16px;
+            background-color: #1abc9c;
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .top-link:hover {
+            background-color: #16a085;
+        }
+
         ul {
             list-style-type: none;
             padding: 0;
-            margin-top: 20px;
+            margin: 20px auto;
             max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 100%;
         }
 
         ul li {
@@ -59,26 +79,39 @@
             font-style: italic;
         }
 
-        .top-link {
-            display: block;
-            width: fit-content;
-            margin: 0 auto 20px auto;
-            padding: 10px 16px;
-            background-color: #1abc9c;
-            color: white;
-            border-radius: 6px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .top-link:hover {
-            background-color: #16a085;
-        }
-
         p {
             text-align: center;
             color: #7f8c8d;
             font-size: 16px;
+        }
+
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 15px 10px;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ccc;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            ul li {
+                padding: 15px;
+            }
+
+            ul li strong {
+                font-size: 16px;
+            }
+
+            .top-link {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
@@ -110,5 +143,9 @@
     {% else %}
         <p>No sessions available.</p>
     {% endif %}
+
+    <footer>
+        &copy; 2025 Vertual Classroom | All Rights Reserved
+    </footer>
 </body>
 </html>

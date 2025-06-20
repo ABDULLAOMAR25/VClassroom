@@ -2,14 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Record Screen + Webcam</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background: #f2f2f2;
       text-align: center;
       padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+
+    h2 {
+      color: #007bff;
+      margin-bottom: 20px;
+    }
+
+    .video-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     video {
       width: 90%;
       max-width: 700px;
@@ -17,74 +38,146 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
+
+    #webcamPreview {
+      width: 180px;
+      height: auto;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+      border: 2px solid #007bff;
+      border-radius: 10px;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
       margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #005ecb;
+    }
+
+    #downloadLink {
+      display: none;
+      margin-top: 15px;
+      font-size: 16px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    #downloadLink:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px 10px;
+      background-color: #eaeaea;
+      color: #555;
+      font-size: 14px;
+      margin-top: auto;
+    }
+
+    @media (max-width: 600px) {
+      #webcamPreview {
+        position: static;
+        margin: 0 auto 10px auto;
+        display: block;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      button {
+        width: 80%;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Record Screen + Webcam + Mic</h2>
+  <div class="video-section">
+    <h2>🎥 Record Screen + Webcam + Mic</h2>
 
-  <!-- Webcam preview (separate) -->
-  <video id="webcamPreview" autoplay muted style="width: 200px; position: fixed; top: 20px; right: 20px; border: 2px solid #007bff;"></video>
+    <video id="webcamPreview" autoplay muted></video>
+    <video id="finalPreview" autoplay muted></video>
 
-  <!-- Final output preview -->
-  <video id="finalPreview" autoplay muted></video><br>
+    <div class="controls">
+      <button onclick="startRecording()">Start Recording</button>
+      <button onclick="stopRecording()">Stop Recording</button>
+    </div>
 
-  <button onclick="startRecording()">Start Recording</button>
-  <button onclick="stopRecording()">Stop Recording</button>
-  <a id="downloadLink" style="display:none" download="recording.webm">Download Recording</a>
+    <a id="downloadLink" download="recording.webm">⬇️ Download Recording</a>
+  </div>
+
+  <footer>
+    &copy; 2025 Technologist TV | All Rights Reserved
+  </footer>
 
   <script>
     let mediaRecorder;
     let recordedChunks = [];
-
     let combinedStream;
     let webcamStream;
     let screenStream;
 
     async function startRecording() {
-      // Get webcam + mic
-      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      document.getElementById("webcamPreview").srcObject = webcamStream;
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById("webcamPreview").srcObject = webcamStream;
 
-      // Get screen
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
 
-      // Merge streams
-      const tracks = [
-        ...screenStream.getVideoTracks(),
-        ...webcamStream.getAudioTracks()
-      ];
+        const tracks = [
+          ...screenStream.getVideoTracks(),
+          ...webcamStream.getAudioTracks()
+        ];
 
-      combinedStream = new MediaStream(tracks);
-      document.getElementById("finalPreview").srcObject = combinedStream;
+        combinedStream = new MediaStream(tracks);
+        document.getElementById("finalPreview").srcObject = combinedStream;
 
-      // Start recording
-      recordedChunks = [];
-      mediaRecorder = new MediaRecorder(combinedStream);
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(combinedStream);
 
-      mediaRecorder.ondataavailable = event => {
-        if (event.data.size > 0) recordedChunks.push(event.data);
-      };
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) recordedChunks.push(event.data);
+        };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const link = document.getElementById('downloadLink');
-        link.href = url;
-        link.style.display = 'inline-block';
-      };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const link = document.getElementById('downloadLink');
+          link.href = url;
+          link.style.display = 'inline-block';
+        };
 
-      mediaRecorder.start();
+        mediaRecorder.start();
+      } catch (err) {
+        alert('Error starting recording: ' + err.message);
+        console.error(err);
+      }
     }
 
     function stopRecording() {
-      mediaRecorder.stop();
-      screenStream.getTracks().forEach(track => track.stop());
-      webcamStream.getTracks().forEach(track => track.stop());
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+
+      screenStream?.getTracks().forEach(track => track.stop());
+      webcamStream?.getTracks().forEach(track => track.stop());
     }
   </script>
 </body>
