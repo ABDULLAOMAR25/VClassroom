@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 import jwt
 import time
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import zipfile
+from werkzeug.utils import secure_filename
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +19,13 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
+
+# File upload configuration
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_VIDEO = {'mp4', 'mkv', 'avi'}
+ALLOWED_NOTES = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'}
 
 # Database Configuration
 db_url = os.environ.get('DATABASE_URL')
@@ -43,6 +52,10 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     reset_code = db.Column(db.String(100), nullable=True)
+
+# --- Helper Function ---
+def allowed_file(filename, allowed_ext):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
 # --- Routes ---
 @app.route('/')
@@ -119,8 +132,9 @@ def create_session():
 
 @app.route("/sessions")
 def sessions():
-    all_sessions = Session.query.order_by(
-        Session.is_live.desc(), Session.start_time.desc().nullslast()
+    all_sessions = ClassSession.query.order_by(
+        ClassSession.is_live.desc(),
+        ClassSession.start_time.desc().nullslast()
     ).all()
     return render_template("sessions.html", sessions=all_sessions)
 
@@ -150,7 +164,7 @@ def join_session(session_id):
 
 @app.route('/record')
 def record():
-    return "Recording feature coming soon!"
+    return render_template("record.html")
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
@@ -162,7 +176,7 @@ def get_token():
         "jti": identity + str(int(time.time())),
         "iss": API_KEY,
         "sub": identity,
-        "exp": int(time.time()) + 3600,  # 1 hour expiration
+        "exp": int(time.time()) + 3600,
         "video": {
             "room_join": True,
             "room": room
@@ -172,10 +186,52 @@ def get_token():
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
     return jsonify({'token': token, 'url': LIVEKIT_URL})
 
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_resources():
+    if request.method == 'POST':
+        video = request.files.get('video')
+        notes = request.files.get('notes')
+        send_zip = request.form.get('send_zip')
+
+        saved_files = []
+        if video and allowed_file(video.filename, ALLOWED_VIDEO):
+            filename = secure_filename(video.filename)
+            video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            saved_files.append(filename)
+
+        if notes and allowed_file(notes.filename, ALLOWED_NOTES):
+            filename = secure_filename(notes.filename)
+            notes.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            saved_files.append(filename)
+
+        if send_zip and saved_files:
+            zip_path = os.path.join(app.config['UPLOAD_FOLDER'], 'resources.zip')
+            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                for f in saved_files:
+                    zipf.write(os.path.join(app.config['UPLOAD_FOLDER'], f), arcname=f)
+            flash('Files uploaded and zipped successfully.')
+        else:
+            flash('Files uploaded successfully.')
+
+        return redirect(url_for('upload_resources'))
+
+    return render_template('upload.html')
+
+@app.route('/resources')
+def list_resources():
+    files = []
+    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+        filetype = filename.rsplit('.', 1)[1].upper()
+        files.append({'filename': filename, 'filetype': filetype})
+    return render_template('resources.html', resources=files)
+
+@app.route('/download/<path:filename>')
+def download_resource(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+
 @app.route('/init-db')
 def init_db():
     db.create_all()
-    return "✅ Database initialized!"
+    return "\u2705 Database initialized!"
 
-# ✅ No app.run() here — Render uses Gunicorn
-
+# No app.run() needed for deployment
