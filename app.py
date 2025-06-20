@@ -117,10 +117,12 @@ def create_session():
         return redirect(url_for('sessions'))
     return render_template('create_session.html')
 
-@app.route('/sessions')
+@app.route("/sessions")
 def sessions():
-    all_sessions = ClassSession.query.all()
-    return render_template('sessions.html', sessions=all_sessions)
+    all_sessions = Session.query.order_by(
+        Session.is_live.desc(), Session.start_time.desc().nullslast()
+    ).all()
+    return render_template("sessions.html", sessions=all_sessions)
 
 @app.route('/start-session/<int:session_id>')
 def start_session(session_id):
