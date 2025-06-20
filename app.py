@@ -232,6 +232,6 @@ def download_resource(filename):
 @app.route('/init-db')
 def init_db():
     db.create_all()
-    return "\u2705 Database initialized!"
+    return "✅ Database initialized!"
 
 # No app.run() needed for deployment
