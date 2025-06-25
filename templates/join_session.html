@@ -6,7 +6,6 @@
   <title>Live Video Classroom</title>
   <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
   <style>
-    /* Your previous CSS from the classroom app */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -146,10 +145,7 @@
   </div>
 
   <script>
-    // Get the session ID dynamically from your Flask template variable if you want, e.g.:
-    // const roomName = "{{ session.id }}";
-    // For this example, let's hardcode or you can change it later:
-    const roomName = "{{ session.id if session else 'default_room' }}";
+    const roomName = "{{ room_name }}";
     const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
     let room;
@@ -163,13 +159,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identity, room: roomName })
         });
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Server error: ${res.status} - ${text}`);
+        }
+
         const data = await res.json();
 
         room = new Livekit.Room();
 
         room.on("trackSubscribed", (track, publication, participant) => {
           if (track.kind === "video") {
-            // Attach remote participant video to #remote-video element
             track.attach(document.getElementById("remote-video"));
           }
         });
@@ -189,7 +190,6 @@
 
         await room.connect(data.url, data.token);
         alert("✅ Connected to room. Click 📷 Camera to start your camera.");
-
       } catch (error) {
         alert("Error connecting to room: " + error.message);
       }
@@ -246,13 +246,11 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // Bind buttons
     document.getElementById("btnCamera").onclick = startCamera;
     document.getElementById("btnMic").onclick = toggleMic;
     document.getElementById("btnRaiseHand").onclick = raiseHand;
     document.getElementById("btnSend").onclick = sendMessage;
 
-    // Connect to the room immediately on load
     connectToRoom();
   </script>
 </body>
