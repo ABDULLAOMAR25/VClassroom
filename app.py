@@ -6,6 +6,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import zipfile
+import requests
 from werkzeug.utils import secure_filename
 
 # Load environment variables
@@ -19,6 +20,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
+LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")  # ✅ Added (MUST be in .env)
 
 # File upload configuration
 UPLOAD_FOLDER = 'uploads'
@@ -185,6 +187,72 @@ def get_token():
 
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
     return jsonify({'token': token, 'url': LIVEKIT_URL})
+
+# --- Start Recording Route ---
+@app.route('/start-recording/<room_name>', methods=['POST'])
+def start_recording(room_name):
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        return "Unauthorized", 403
+
+    payload = {
+        "iss": API_KEY,
+        "exp": int(time.time()) + 60,
+    }
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    egress_payload = {
+        "room_name": room_name,
+        "layout": "grid",
+        "output": {
+            "file": {
+                "filepath": f"/recordings/{room_name}_{int(time.time())}.mp4"
+            }
+        }
+    }
+
+    response = requests.post(LIVEKIT_EGRESS_URL, headers=headers, json=egress_payload)
+
+    if response.status_code == 200:
+        result = response.json()
+        session['egress_id'] = result.get("egress_id")
+        return jsonify({"message": "✅ Recording started"})
+    else:
+        return jsonify({"message": "❌ Failed to start recording", "details": response.text}), 500
+
+# --- Stop Recording Route ---
+@app.route('/stop-recording', methods=['POST'])
+def stop_recording():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        return "Unauthorized", 403
+
+    egress_id = session.get('egress_id')
+    if not egress_id:
+        return jsonify({"message": "⚠️ No active recording found"})
+
+    payload = {
+        "iss": API_KEY,
+        "exp": int(time.time()) + 60,
+    }
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    stop_url = LIVEKIT_EGRESS_URL.replace('/start', '/stop')
+    response = requests.post(stop_url, headers=headers, json={"egress_id": egress_id})
+
+    if response.status_code == 200:
+        session.pop('egress_id', None)
+        return jsonify({"message": "🛑 Recording stopped"})
+    else:
+        return jsonify({"message": "❌ Failed to stop recording", "details": response.text}), 500
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
