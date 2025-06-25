@@ -1,6 +1,8 @@
-FLASK_SECRET_KEY=your_secret_key
-LIVEKIT_API_KEY=your_api_key
-LIVEKIT_API_SECRET=your_api_secret
-LIVEKIT_URL=https://your-livekit-url
-LIVEKIT_EGRESS_URL=https://your-livekit-egress-endpoint/start
+FLASK_SECRET_KEY=ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
+LIVEKIT_API_KEY=APISvyjdbYaJSG4
+LIVEKIT_API_SECRET=********
+LIVEKIT_URL=wss://vclassroom-wwi9i8el.livekit.cloud
+LIVEKIT_EGRESS_URL=https://cloud.livekit.io/projects/p_2qw731cjkif/overview
 DATABASE_URL=postgresql://...
+
+
