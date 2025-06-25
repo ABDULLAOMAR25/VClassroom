@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Live Video Classroom</title>
   <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
   <style>
+    /* Your previous CSS from the classroom app */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -124,11 +125,9 @@
         <video id="remote-video" autoplay playsinline></video>
       </div>
       <div id="controls">
-        <button onclick="startCamera()">📷 Camera</button>
-        <button onclick="toggleMic()">🎤 Mic</button>
-        <button onclick="startClientRecording()">⏺️ Record</button>
-        <button onclick="stopClientRecording()">🛑 Stop</button>
-        <button onclick="raiseHand()">✋ Raise Hand</button>
+        <button id="btnCamera">📷 Camera</button>
+        <button id="btnMic">🎤 Mic</button>
+        <button id="btnRaiseHand">✋ Raise Hand</button>
       </div>
     </div>
     <div id="right-panel">
@@ -140,136 +139,121 @@
         <div id="messages"></div>
         <div id="chat-input">
           <input type="text" id="messageBox" placeholder="Type a message..." />
-          <button onclick="sendMessage()">Send</button>
+          <button id="btnSend">Send</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const identity = prompt("Enter your name:");
-    const roomName = "<session id>"; // Replace with dynamic ID if using Flask template
+    // Get the session ID dynamically from your Flask template variable if you want, e.g.:
+    // const roomName = "{{ session.id }}";
+    // For this example, let's hardcode or you can change it later:
+    const roomName = "{{ session.id if session else 'default_room' }}";
+    const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
-    let room, localTracks = [], mediaRecorder, recordedChunks = [], combinedStream;
-    let isRoomConnected = false;
+    let room;
+    let localTracks = [];
+    let micEnabled = true;
 
-    // Step 1: Fetch Token and Connect to Room
-    fetch('/get_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, room: roomName })
-    })
-    .then(res => res.json())
-    .then(async ({ token, url }) => {
-      room = new LiveKit.Room();
+    async function connectToRoom() {
+      try {
+        const res = await fetch('/get_token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity, room: roomName })
+        });
+        const data = await res.json();
 
-      room.on("trackSubscribed", (track, publication, participant) => {
-        if (track.kind === "video") {
-          track.attach(document.getElementById("remote-video"));
-        }
-      });
+        room = new Livekit.Room();
 
-      room.on("participantConnected", participant => {
-        const li = document.createElement("li");
-        li.textContent = participant.identity;
-        li.id = participant.sid;
-        document.getElementById("participant-list").appendChild(li);
-      });
+        room.on("trackSubscribed", (track, publication, participant) => {
+          if (track.kind === "video") {
+            // Attach remote participant video to #remote-video element
+            track.attach(document.getElementById("remote-video"));
+          }
+        });
 
-      room.on("participantDisconnected", participant => {
-        const li = document.getElementById(participant.sid);
-        if (li) li.remove();
-      });
+        room.on("participantConnected", participant => {
+          const list = document.getElementById("participant-list");
+          const li = document.createElement("li");
+          li.id = participant.sid;
+          li.textContent = participant.identity;
+          list.appendChild(li);
+        });
 
-      await room.connect(url, token);
-      isRoomConnected = true;
-      alert("✅ Connected to classroom. Click 📷 Camera to enable video.");
-    });
+        room.on("participantDisconnected", participant => {
+          const li = document.getElementById(participant.sid);
+          if (li) li.remove();
+        });
 
-    // Step 2: Start Camera and Mic
+        await room.connect(data.url, data.token);
+        alert("✅ Connected to room. Click 📷 Camera to start your camera.");
+
+      } catch (error) {
+        alert("Error connecting to room: " + error.message);
+      }
+    }
+
     async function startCamera() {
-      if (!isRoomConnected) {
-        alert("⚠️ Room not yet connected.");
+      if (!room) {
+        alert("You are not connected to the room yet.");
         return;
       }
-
       try {
-        localTracks = await LiveKit.createLocalTracks({ audio: true, video: true });
-
-        for (let track of localTracks) {
+        localTracks = await Livekit.createLocalTracks({ audio: true, video: true });
+        for (const track of localTracks) {
           await room.localParticipant.publishTrack(track);
           if (track.kind === "video") {
             track.attach(document.getElementById("local-video"));
           }
         }
-      } catch (error) {
-        alert("Could not start camera: " + error.message);
+      } catch (err) {
+        alert("Could not start camera: " + err.message);
       }
     }
 
-    // Step 3: Toggle Microphone
     function toggleMic() {
-      const audioTrack = localTracks.find(t => t.kind === 'audio');
-      if (audioTrack) {
-        audioTrack.isEnabled ? audioTrack.disable() : audioTrack.enable();
+      const audioTrack = localTracks.find(t => t.kind === "audio");
+      if (!audioTrack) return;
+      if (micEnabled) {
+        audioTrack.disable();
+        micEnabled = false;
+        document.getElementById("btnMic").textContent = "🎤 Mic Off";
+      } else {
+        audioTrack.enable();
+        micEnabled = true;
+        document.getElementById("btnMic").textContent = "🎤 Mic On";
       }
     }
 
-    // Step 4: Start Recording Camera + Mic
-    function startClientRecording() {
-      if (!localTracks.length) {
-        alert("Start the camera first.");
-        return;
-      }
-
-      const stream = new MediaStream();
-      const videoTrack = localTracks.find(t => t.kind === 'video');
-      const audioTrack = localTracks.find(t => t.kind === 'audio');
-
-      if (videoTrack) stream.addTrack(videoTrack.mediaStreamTrack);
-      if (audioTrack) stream.addTrack(audioTrack.mediaStreamTrack);
-
-      recordedChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-
-      mediaRecorder.ondataavailable = e => {
-        if (e.data.size > 0) recordedChunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-      };
-
-      mediaRecorder.start();
-    }
-
-    function stopClientRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
-    }
-
-    // Step 5: Chat and Hand Raising
     function raiseHand() {
+      const messages = document.getElementById("messages");
       const div = document.createElement("div");
       div.textContent = `${identity} ✋ raised hand.`;
-      document.getElementById("messages").appendChild(div);
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
     }
 
     function sendMessage() {
       const input = document.getElementById("messageBox");
-      if (input.value.trim()) {
-        const div = document.createElement("div");
-        div.textContent = `${identity}: ${input.value}`;
-        document.getElementById("messages").appendChild(div);
-        input.value = "";
-      }
+      if (!input.value.trim()) return;
+      const messages = document.getElementById("messages");
+      const div = document.createElement("div");
+      div.textContent = `${identity}: ${input.value}`;
+      messages.appendChild(div);
+      input.value = "";
+      messages.scrollTop = messages.scrollHeight;
     }
+
+    // Bind buttons
+    document.getElementById("btnCamera").onclick = startCamera;
+    document.getElementById("btnMic").onclick = toggleMic;
+    document.getElementById("btnRaiseHand").onclick = raiseHand;
+    document.getElementById("btnSend").onclick = sendMessage;
+
+    // Connect to the room immediately on load
+    connectToRoom();
   </script>
 </body>
 </html>
