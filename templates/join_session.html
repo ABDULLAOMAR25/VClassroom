@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Classroom</title>
+  <title>Live Video Classroom</title>
   <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
   <style>
     * {
@@ -148,9 +148,11 @@
 
   <script>
     const identity = prompt("Enter your name:");
-    const roomName = "classroom_{{ session.id }}";
+    const roomName = "<int:session_id>"; // Replace with your dynamic session ID
+
     let room, mediaRecorder, recordedChunks = [], combinedStream;
     let localTracks = [];
+    let isRoomConnected = false;
 
     fetch('/get_token', {
       method: 'POST',
@@ -181,9 +183,15 @@
       });
 
       await room.connect(url, token);
+      isRoomConnected = true;
+      alert("✅ Connected to the classroom. Click 📷 Camera to begin.");
     });
 
     async function startCamera() {
+      if (!isRoomConnected) {
+        alert("⚠️ Room not yet connected. Please wait.");
+        return;
+      }
       try {
         localTracks = await Livekit.createLocalTracks({ audio: true, video: true });
         for (let track of localTracks) {
