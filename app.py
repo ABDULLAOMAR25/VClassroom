@@ -184,6 +184,17 @@ def get_token():
             "room": room
         }
     }
+    
+    payload = {
+    "jti": identity + str(int(time.time())),
+    "iss": API_KEY,
+    "sub": identity,
+    "exp": int(time.time()) + 3600,
+    "video": {
+        "room_join": True,
+        "room": room_name  # the room user wants to join
+    }
+}
 
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
     return jsonify({'token': token, 'url': LIVEKIT_URL})
