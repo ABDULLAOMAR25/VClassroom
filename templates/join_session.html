@@ -2,59 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Join Live Class</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Classroom</title>
   <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       background-color: #f4f6f9;
+      padding: 20px;
       color: #2c3e50;
-      padding: 30px 20px;
+    }
+    header {
       text-align: center;
-      min-height: 100vh;
+      font-size: 24px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    #container {
+      flex: 1;
+      display: flex;
+      gap: 20px;
+    }
+    #left-panel {
+      flex: 3;
       display: flex;
       flex-direction: column;
     }
-
-    h1 {
-      margin-bottom: 30px;
-      color: #2c3e50;
-      font-size: 24px;
-    }
-
     #video-container {
       display: flex;
       justify-content: center;
       gap: 20px;
       flex-wrap: wrap;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       flex: 1;
     }
-
     video {
       width: 100%;
       max-width: 480px;
       height: auto;
       border-radius: 12px;
       background-color: #000;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-
     #controls {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
       gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
-
     #controls button {
       font-size: 16px;
       padding: 10px 25px;
@@ -65,210 +67,379 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-
-    #controls button:hover {
+    #controls button:hover:not(:disabled) {
       background-color: #16a085;
     }
-
     #controls button:disabled {
-      background-color: #cccccc;
+      background-color: #ccc;
       cursor: not-allowed;
     }
-
-    footer {
-      text-align: center;
-      padding: 15px 10px;
-      background-color: #ecf0f1;
-      color: #7f8c8d;
-      font-size: 14px;
-      margin-top: auto;
+    #right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+      padding: 15px;
+      height: 100%;
     }
-
-    @media (max-width: 768px) {
-      #video-container {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      #controls {
-        flex-direction: column;
-      }
-
-      h1 {
-        font-size: 20px;
-      }
+    #participants {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    #participants strong {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 18px;
+      color: #16a085;
+    }
+    #participant-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    #participant-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    #chat {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #fafafa;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+    #chat-input {
+      display: flex;
+      gap: 10px;
+    }
+    #chat-input input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #chat-input button {
+      padding: 10px 20px;
+      background-color: #16a085;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #chat-input button:hover {
+      background-color: #1abc9c;
     }
   </style>
 </head>
 <body>
-  <h1>Live Class Session: {{ session.class_name }}</h1>
 
-  <div id="video-container">
-    <video id="local-video" autoplay muted playsinline></video>
-    <video id="remote-video" autoplay playsinline></video>
+<header>Live Class Session: {{ session.class_name }}</header>
+
+<div id="container">
+  <div id="left-panel">
+    <div id="video-container">
+      <video id="local-video" autoplay muted playsinline></video>
+      <video id="remote-video" autoplay playsinline></video>
+    </div>
+    <div id="controls">
+      <button id="camera-btn">📷 Camera</button>
+      <button id="mic-btn" disabled>🎤 Mic</button>
+      <button id="record-btn" disabled>⏺️ Record</button>
+      <button id="stop-btn" disabled>🛑 Stop</button>
+      <button id="raise-hand-btn">✋ Raise Hand</button>
+    </div>
   </div>
 
-  <div id="controls">
-    <button id="camera-btn" onclick="toggleCamera()">📷 Camera</button>
-    <button id="mic-btn" onclick="toggleMic()">🎤 Mic</button>
-    <button onclick="startRecording()">🟢 Start Server Recording</button>
-    <button onclick="stopRecording()">🔴 Stop Server Recording</button>
-    <button id="start-rec-btn" onclick="startClientRecording()">⏺️ Start Client Recording</button>
-    <button id="stop-rec-btn" onclick="stopClientRecording()" disabled>🛑 Stop Client Recording</button>
+  <div id="right-panel">
+    <div id="participants">
+      <strong>Participants</strong>
+      <ul id="participant-list"></ul>
+    </div>
+    <div id="chat">
+      <div id="messages"></div>
+      <div id="chat-input">
+        <input type="text" id="messageBox" placeholder="Type your message..." />
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <footer>
-    &copy; 2025 Technologist TV | All Rights Reserved
-  </footer>
+<footer>&copy; 2025 Technologist TV | All Rights Reserved</footer>
 
-  <script>
-    const roomName = "classroom_{{ session.id }}";
-    const identity = prompt("Enter your name:");
-    let cameraOn = true;
-    let micOn = true;
-    let mediaRecorder;
-    let recordedChunks = [];
-    let combinedStream;
+<script>
+  const roomName = "classroom_{{ session.id }}";
+  const identity = prompt("Enter your name:") || "Guest";
+  let room;
+  let localTracks = [];
+  let cameraOn = false;
+  let micOn = false;
+  let mediaRecorder;
+  let recordedChunks = [];
+  let recordingStream;
 
-    fetch('/get_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, room: roomName })
-    })
-    .then(res => res.json())
-    .then(async ({ token, url }) => {
-      const room = new Livekit.Room();
+  // UI elements
+  const cameraBtn = document.getElementById("camera-btn");
+  const micBtn = document.getElementById("mic-btn");
+  const recordBtn = document.getElementById("record-btn");
+  const stopBtn = document.getElementById("stop-btn");
+  const raiseHandBtn = document.getElementById("raise-hand-btn");
+  const participantList = document.getElementById("participant-list");
+  const messagesDiv = document.getElementById("messages");
+  const messageBox = document.getElementById("messageBox");
+  const sendBtn = document.getElementById("send-btn");
+  const localVideo = document.getElementById("local-video");
 
-      room.on("trackSubscribed", (track, publication, participant) => {
-        if (track.kind === "video") {
-          track.attach(document.getElementById("remote-video"));
-        }
-      });
+  // Connect to LiveKit room and set up event handlers
+  fetch('/get_token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity, room: roomName })
+  })
+  .then(res => res.json())
+  .then(async ({ token, url }) => {
+    room = new Livekit.Room();
 
-      await room.connect(url, token);
-
-      const localTracks = await Livekit.createLocalTracks({
-        audio: true,
-        video: true
-      });
-
-      for (let track of localTracks) {
-        await room.localParticipant.publishTrack(track);
-        if (track.kind === "video") {
-          track.attach(document.getElementById("local-video"));
-        }
+    room.on("trackSubscribed", (track, publication, participant) => {
+      if (track.kind === "video") {
+        track.attach(document.getElementById("remote-video"));
       }
-
-      window.room = room;
-      window.localTracks = localTracks;
     });
 
-    function toggleCamera() {
-      const videoTrack = window.localTracks.find(t => t.kind === 'video');
-      if (videoTrack) {
-        if (cameraOn) {
-          videoTrack.disable();
-          document.getElementById("camera-btn").innerText = "🚫📷 Camera Off";
-        } else {
-          videoTrack.enable();
-          document.getElementById("camera-btn").innerText = "📷 Camera";
-        }
-        cameraOn = !cameraOn;
+    room.on("participantConnected", participant => {
+      addParticipant(participant);
+      addMessage(`${participant.identity} joined the room.`);
+    });
+
+    room.on("participantDisconnected", participant => {
+      removeParticipant(participant);
+      addMessage(`${participant.identity} left the room.`);
+    });
+
+    await room.connect(url, token);
+
+    // Add existing participants to list
+    room.participants.forEach(addParticipant);
+  });
+
+  function addParticipant(participant) {
+    const li = document.createElement("li");
+    li.textContent = participant.identity;
+    li.id = participant.sid;
+    participantList.appendChild(li);
+  }
+  function removeParticipant(participant) {
+    const li = document.getElementById(participant.sid);
+    if (li) li.remove();
+  }
+
+  // Chat message management
+  function addMessage(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  // Simple message broadcasting via DataTracks (LiveKit)
+  let dataChannel;
+
+  async function setupDataChannel() {
+    if (!room) return;
+    dataChannel = await room.localParticipant.publishData();
+    room.on("dataReceived", (payload, participant) => {
+      const message = new TextDecoder().decode(payload);
+      addMessage(`${participant.identity}: ${message}`);
+    });
+  }
+
+  // Start camera (on button click)
+  async function startCamera() {
+    if(cameraOn) {
+      // Turn camera off
+      const videoTrack = localTracks.find(t => t.kind === 'video');
+      if(videoTrack) {
+        videoTrack.stop();
+        room.localParticipant.unpublishTrack(videoTrack);
       }
+      localTracks = localTracks.filter(t => t.kind !== 'video');
+      localVideo.srcObject = null;
+      cameraOn = false;
+      micBtn.disabled = true;
+      micBtn.innerText = "🎤 Mic";
+      recordBtn.disabled = true;
+      cameraBtn.innerText = "📷 Camera";
+      return;
     }
 
-    function toggleMic() {
-      const audioTrack = window.localTracks.find(t => t.kind === 'audio');
-      if (audioTrack) {
-        if (micOn) {
-          audioTrack.disable();
-          document.getElementById("mic-btn").innerText = "🔇 Mic Off";
-        } else {
-          audioTrack.enable();
-          document.getElementById("mic-btn").innerText = "🎤 Mic";
-        }
-        micOn = !micOn;
+    try {
+      const tracks = await Livekit.createLocalTracks({ video: true });
+      for (const track of tracks) {
+        await room.localParticipant.publishTrack(track);
+        track.attach(localVideo);
+        localTracks.push(track);
       }
+      cameraOn = true;
+      micBtn.disabled = false;
+      micBtn.innerText = "🎤 Mic On";
+      recordBtn.disabled = false;
+      cameraBtn.innerText = "🚫 Camera Off";
+    } catch (err) {
+      alert("Could not start camera: " + err.message);
     }
+  }
 
-    function startRecording() {
-      fetch(`/start-recording/${roomName}`, {
-        method: 'POST'
-      })
-      .then(res => res.json())
-      .then(data => alert(data.message || "Server recording started"))
-      .catch(err => alert("Error starting server recording"));
-    }
+  // Toggle mic on/off
+  async function toggleMic() {
+    if (!cameraOn) return alert("Turn on the camera first!");
 
-    function stopRecording() {
-      fetch(`/stop-recording`, {
-        method: 'POST'
-      })
-      .then(res => res.json())
-      .then(data => alert(data.message || "Server recording stopped"))
-      .catch(err => alert("Error stopping server recording"));
-    }
-
-    async function startClientRecording() {
+    const audioTrack = localTracks.find(t => t.kind === 'audio');
+    if (!audioTrack) {
+      // First time get mic track
       try {
-        const cameraTrack = window.localTracks.find(t => t.kind === 'video');
-        const micTrack = window.localTracks.find(t => t.kind === 'audio');
-
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-
-        combinedStream = new MediaStream();
-
-        screenStream.getTracks().forEach(track => combinedStream.addTrack(track));
-        if (cameraTrack) combinedStream.addTrack(cameraTrack.mediaStreamTrack);
-        if (micTrack) combinedStream.addTrack(micTrack.mediaStreamTrack);
-
-        document.getElementById('local-video').srcObject = combinedStream;
-
-        recordedChunks = [];
-        mediaRecorder = new MediaRecorder(combinedStream);
-
-        mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, { type: 'video/webm' });
-          const url = URL.createObjectURL(blob);
-
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = `recording_${Date.now()}.webm`;
-          document.body.appendChild(a);
-          a.click();
-
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 100);
-
-          const localVideo = document.getElementById('local-video');
-          localVideo.srcObject = null;
-          if (cameraTrack) cameraTrack.attach(localVideo);
-        };
-
-        mediaRecorder.start();
-        document.getElementById('start-rec-btn').disabled = true;
-        document.getElementById('stop-rec-btn').disabled = false;
-      } catch (err) {
-        alert('Error starting client recording: ' + err.message);
+        const tracks = await Livekit.createLocalTracks({ audio: true });
+        for (const t of tracks) {
+          await room.localParticipant.publishTrack(t);
+          localTracks.push(t);
+        }
+        micOn = true;
+        micBtn.innerText = "🔇 Mic Off";
+      } catch (e) {
+        alert("Could not access mic: " + e.message);
       }
+      return;
+    }
+    if (audioTrack.isEnabled) {
+      audioTrack.disable();
+      micBtn.innerText = "🔇 Mic Off";
+      micOn = false;
+    } else {
+      audioTrack.enable();
+      micBtn.innerText = "🎤 Mic On";
+      micOn = true;
+    }
+  }
+
+  // Start recording camera+mic stream
+  function startRecording() {
+    if(!cameraOn) {
+      return alert("Turn on the camera before recording!");
+    }
+    if(!micOn) {
+      return alert("Turn on the mic before recording!");
+    }
+    const videoTrack = localTracks.find(t => t.kind === 'video');
+    const audioTrack = localTracks.find(t => t.kind === 'audio');
+
+    if (!videoTrack || !audioTrack) {
+      return alert("Camera and Mic must be active to record!");
     }
 
-    function stopClientRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        combinedStream.getTracks().forEach(track => track.stop());
+    recordingStream = new MediaStream([
+      videoTrack.mediaStreamTrack,
+      audioTrack.mediaStreamTrack
+    ]);
 
-        document.getElementById('start-rec-btn').disabled = false;
-        document.getElementById('stop-rec-btn').disabled = true;
-      }
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(recordingStream);
+
+    mediaRecorder.ondataavailable = e => {
+      if(e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, {type: 'video/webm'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recording_${Date.now()}.webm`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    mediaRecorder.start();
+    recordBtn.disabled = true;
+    stopBtn.disabled = false;
+  }
+
+  // Stop recording
+  function stopRecording() {
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      recordBtn.disabled = false;
+      stopBtn.disabled = true;
     }
-  </script>
+  }
+
+  // Raise hand broadcast message
+  function raiseHand() {
+    if (!dataChannel) {
+      alert("Data channel not ready yet.");
+      return;
+    }
+    const message = `${identity} raised their hand ✋`;
+    dataChannel.send(new TextEncoder().encode(message));
+    addMessage(message);
+  }
+
+  // Send chat message
+  function sendMessage() {
+    if (!dataChannel) {
+      alert("Data channel not ready yet.");
+      return;
+    }
+    const text = messageBox.value.trim();
+    if(!text) return;
+    dataChannel.send(new TextEncoder().encode(text));
+    addMessage(`${identity}: ${text}`);
+    messageBox.value = "";
+  }
+
+  cameraBtn.addEventListener('click', startCamera);
+  micBtn.addEventListener('click', toggleMic);
+  recordBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+  raiseHandBtn.addEventListener('click', raiseHand);
+  sendBtn.addEventListener('click', sendMessage);
+
+  // Setup data channel after connecting
+  const waitForRoom = setInterval(() => {
+    if(room && room.localParticipant) {
+      clearInterval(waitForRoom);
+      setupDataChannel();
+    }
+  }, 500);
+
+  async function setupDataChannel() {
+    if (!room) return;
+    try {
+      dataChannel = await room.localParticipant.publishData();
+      room.on("dataReceived", (payload, participant) => {
+        const message = new TextDecoder().decode(payload);
+        addMessage(`${participant.identity}: ${message}`);
+      });
+    } catch(e) {
+      console.error("Failed to setup data channel", e);
+    }
+  }
+</script>
+
 </body>
 </html>
