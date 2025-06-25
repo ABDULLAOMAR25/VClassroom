@@ -172,7 +172,10 @@ def record():
 def get_token():
     data = request.get_json()
     identity = data.get('identity')
-    room = data.get('room')
+    room = data.get('room')  # this should come from frontend
+
+    if not identity or not room:
+        return jsonify({'error': 'Missing identity or room'}), 400
 
     payload = {
         "jti": identity + str(int(time.time())),
@@ -181,22 +184,12 @@ def get_token():
         "exp": int(time.time()) + 3600,
         "video": {
             "room_join": True,
-            "room": room
+            "room": room  # ✅ fixed: using the room passed by frontend
         }
     }
-    
-    payload = {
-    "jti": identity + str(int(time.time())),
-    "iss": API_KEY,
-    "sub": identity,
-    "exp": int(time.time()) + 3600,
-    "video": {
-        "room_join": True,
-        "room": room_name  # the room user wants to join
-    }
-}
 
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+
     return jsonify({'token': token, 'url': LIVEKIT_URL})
 
 # --- Start Recording Route ---
