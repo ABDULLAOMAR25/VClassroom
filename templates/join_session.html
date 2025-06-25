@@ -111,8 +111,10 @@
   <div id="controls">
     <button id="camera-btn" onclick="toggleCamera()">📷 Camera</button>
     <button id="mic-btn" onclick="toggleMic()">🎤 Mic</button>
-    <button onclick="startRecording()">⏺️ Start Recording</button>
-    <button onclick="stopRecording()">🛑 Stop Recording</button>
+    <button onclick="startRecording()">🟢 Start Server Recording</button>
+    <button onclick="stopRecording()">🔴 Stop Server Recording</button>
+    <button id="start-rec-btn" onclick="startClientRecording()">⏺️ Start Client Recording</button>
+    <button id="stop-rec-btn" onclick="stopClientRecording()" disabled>🛑 Stop Client Recording</button>
   </div>
 
   <footer>
@@ -124,6 +126,9 @@
     const identity = prompt("Enter your name:");
     let cameraOn = true;
     let micOn = true;
+    let mediaRecorder;
+    let recordedChunks = [];
+    let combinedStream;
 
     fetch('/get_token', {
       method: 'POST',
@@ -191,8 +196,8 @@
         method: 'POST'
       })
       .then(res => res.json())
-      .then(data => alert(data.message || "Recording started"))
-      .catch(err => alert("Error starting recording"));
+      .then(data => alert(data.message || "Server recording started"))
+      .catch(err => alert("Error starting server recording"));
     }
 
     function stopRecording() {
@@ -200,8 +205,69 @@
         method: 'POST'
       })
       .then(res => res.json())
-      .then(data => alert(data.message || "Recording stopped"))
-      .catch(err => alert("Error stopping recording"));
+      .then(data => alert(data.message || "Server recording stopped"))
+      .catch(err => alert("Error stopping server recording"));
+    }
+
+    async function startClientRecording() {
+      try {
+        const cameraTrack = window.localTracks.find(t => t.kind === 'video');
+        const micTrack = window.localTracks.find(t => t.kind === 'audio');
+
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+
+        combinedStream = new MediaStream();
+
+        screenStream.getTracks().forEach(track => combinedStream.addTrack(track));
+        if (cameraTrack) combinedStream.addTrack(cameraTrack.mediaStreamTrack);
+        if (micTrack) combinedStream.addTrack(micTrack.mediaStreamTrack);
+
+        document.getElementById('local-video').srcObject = combinedStream;
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(combinedStream);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `recording_${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+
+          const localVideo = document.getElementById('local-video');
+          localVideo.srcObject = null;
+          if (cameraTrack) cameraTrack.attach(localVideo);
+        };
+
+        mediaRecorder.start();
+        document.getElementById('start-rec-btn').disabled = true;
+        document.getElementById('stop-rec-btn').disabled = false;
+      } catch (err) {
+        alert('Error starting client recording: ' + err.message);
+      }
+    }
+
+    function stopClientRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        combinedStream.getTracks().forEach(track => track.stop());
+
+        document.getElementById('start-rec-btn').disabled = false;
+        document.getElementById('stop-rec-btn').disabled = true;
+      }
     }
   </script>
 </body>
