@@ -71,6 +71,10 @@ class Attendance(db.Model):
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
+@app.route('/')
+def index():
+    return "✅ VClassroom Flask App is running!"
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
     if request.method == 'POST':
