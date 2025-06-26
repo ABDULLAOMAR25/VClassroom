@@ -175,6 +175,3 @@ def join_session(session_id):
 
     return render_template('join_session.html', room_name=session_id)
 
-# --- Main entry (only for local testing) ---
-if __name__ == '__main__':
-    app.run(debug=True)
