@@ -162,7 +162,7 @@ def export_attendance():
         headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
     )
 
-@app.route('/join-session/<int:session_id>')
+@app.route('/join_session/<int:session_id>')
 def join_session(session_id):
     if 'user_id' not in session or session.get('role') != 'student':
         return redirect(url_for('login'))

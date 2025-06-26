@@ -162,12 +162,10 @@
     <div class="sidebar">
       <h2>📘 V-Class</h2>
       <ul>
-        <li class="active"><a href="dashboard.html">🏠 Dashboard</a></li>
-        <li><a href="login.html">📚 My Courses</a></li>
-        <li><a href="login.html">🎥 Join Class</a></li>
-        <li><a href="login.html">📝 Assignments</a></li>
-        <li><a href="#">👤 Profile</a></li>
-        <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
+        <li class="active"><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+<li><a href="{{ url_for('list_resources') }}">📚 My Resources</a></li>
+<li><a href="{{ url_for('upload_resources') }}">📤 Upload</a></li>
+<li><a href="{{ url_for('export_attendance') }}">🧾 Export Attendance</a></li>
       </ul>
     </div>
 
