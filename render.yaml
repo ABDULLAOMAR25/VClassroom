@@ -1,19 +1,19 @@
 services:
   - type: web
-    name: Online-classroom
+    name: VClassroom
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-      - key: FLASK_SECRET_KEY
+      - key: ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
         value: your_secret_key
-      - key: LIVEKIT_API_KEY
+      - key: APISvyjdbYaJSG4
         sync: false
-      - key: LIVEKIT_API_SECRET
+      - key: yBvpF6ztS22hxOG6qaAuvfR9gA5HbC0BaamEHmjyFXM
         sync: false
-      - key: LIVEKIT_URL
+      - key: wss://vclassroom-wwi9i8el.livekit.cloud
         sync: false
       - key: postgresql://liveclassroom_db_user:4LlknNrJn7DU6EHfwtg7sAugWROGLCVJ@dpg-d0nem3idbo4c73c3ldf0-a/liveclassroom_db
         fromDatabase:
-          name: Liveclassroom
+          name: postgresql://...
           property: connectionString
