@@ -75,6 +75,28 @@ def allowed_file(filename, allowed_ext):
 def index():
     return "✅ VClassroom Flask App is running!"
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            session['role'] = user.role
+            return redirect(url_for('dashboard'))
+        flash("Invalid credentials")
+        return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard.html')
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
     if request.method == 'POST':
@@ -152,3 +174,7 @@ def join_session(session_id):
         db.session.commit()
 
     return render_template('join_session.html', room_name=session_id)
+
+# --- Main entry (only for local testing) ---
+if __name__ == '__main__':
+    app.run(debug=True)
