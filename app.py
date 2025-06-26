@@ -156,23 +156,18 @@ def end_session(session_id):
     db.session.commit()
     return redirect(url_for('sessions'))
 
-@app.route('/join-session/<int:session_id>')
+@app.route('/join-session/<session_id>')
 def join_session(session_id):
-    session_obj = ClassSession.query.get_or_404(session_id)
-    if session_obj.is_live:
-        return render_template('join_session.html', session=session_obj)
-    else:
-        return "This session is not live right now."
+    return render_template('join_session.html', room_name=session_id)
 
 @app.route('/record')
 def record():
     return render_template("record.html")
-
 @app.route('/get_token', methods=['POST'])
 def get_token():
     data = request.get_json()
     identity = data.get('identity')
-    room = data.get('room')  # this should come from frontend
+    room = data.get('room')
 
     if not identity or not room:
         return jsonify({'error': 'Missing identity or room'}), 400
@@ -184,7 +179,7 @@ def get_token():
         "exp": int(time.time()) + 3600,
         "video": {
             "room_join": True,
-            "room": room  # ✅ fixed: using the room passed by frontend
+            "room": room
         }
     }
 
