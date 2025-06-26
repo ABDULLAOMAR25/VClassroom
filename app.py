@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory, Response
 from flask_sqlalchemy import SQLAlchemy
 import jwt
 import time
@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import os
 import zipfile
 import requests
+import csv
+from io import StringIO
 from werkzeug.utils import secure_filename
 
 # Load environment variables
@@ -20,7 +22,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
-LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")  # ✅ Added (MUST be in .env)
+LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")
 
 # File upload configuration
 UPLOAD_FOLDER = 'uploads'
@@ -30,7 +32,7 @@ ALLOWED_VIDEO = {'mp4', 'mkv', 'avi'}
 ALLOWED_NOTES = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'}
 
 # Database Configuration
-db_url = os.environ.get('DATABASE_URL')
+db_url = os.getenv('DATABASE_URL')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
@@ -55,203 +57,19 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)
     reset_code = db.Column(db.String(100), nullable=True)
 
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('class_session.id'), nullable=False)
+    join_time = db.Column(db.DateTime, default=datetime.utcnow)
+    leave_time = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', backref='attendances')
+    session = db.relationship('ClassSession', backref='attendances')
+
 # --- Helper Function ---
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
-
-# --- Routes ---
-@app.route('/')
-def index():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        role = request.form['role']
-
-        user = User.query.filter_by(username=username, email=email, password=password, role=role).first()
-        if user:
-            session['user_id'] = user.id
-            session['role'] = user.role
-            return redirect(url_for('dashboard'))
-        return "Invalid credentials"
-    return render_template('login.html')
-
-@app.route('/reset-password/<code>', methods=['GET', 'POST'])
-def reset_password(code):
-    user = User.query.filter_by(reset_code=code).first()
-    if not user:
-        return "Invalid or expired reset code."
-
-    if request.method == 'POST':
-        new_password = request.form['new_password']
-        confirm_password = request.form['confirm_password']
-        if new_password != confirm_password:
-            return "Passwords do not match."
-        user.password = new_password
-        user.reset_code = None
-        db.session.commit()
-        return redirect(url_for('login'))
-
-    return render_template('reset_password.html', code=code)
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    role = session.get('role')
-    if role == 'student':
-        return render_template('dashboard_student.html')
-    elif role == 'teacher':
-        return render_template('dashboard_teacher.html')
-    elif role == 'admin':
-        return render_template('dashboard_admin.html')
-    else:
-        return "Unknown role"
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-@app.route('/create-session', methods=['GET', 'POST'])
-def create_session():
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-    if request.method == 'POST':
-        class_name = request.form['class_name']
-        session_obj = ClassSession(class_name=class_name)
-        db.session.add(session_obj)
-        db.session.commit()
-        return redirect(url_for('sessions'))
-    return render_template('create_session.html')
-
-@app.route("/sessions")
-def sessions():
-    all_sessions = ClassSession.query.order_by(
-        ClassSession.is_live.desc(),
-        ClassSession.start_time.desc().nullslast()
-    ).all()
-    return render_template("sessions.html", sessions=all_sessions)
-
-@app.route('/start-session/<int:session_id>')
-def start_session(session_id):
-    session_obj = ClassSession.query.get_or_404(session_id)
-    session_obj.is_live = True
-    session_obj.start_time = datetime.now()
-    db.session.commit()
-    return redirect(url_for('sessions'))
-
-@app.route('/end-session/<int:session_id>')
-def end_session(session_id):
-    session_obj = ClassSession.query.get_or_404(session_id)
-    session_obj.is_live = False
-    session_obj.end_time = datetime.now()
-    db.session.commit()
-    return redirect(url_for('sessions'))
-
-@app.route('/join-session/<session_id>')
-def join_session(session_id):
-    return render_template('join_session.html', room_name=session_id)
-
-@app.route('/record')
-def record():
-    return render_template("record.html")
-@app.route('/get_token', methods=['POST'])
-def get_token():
-    data = request.get_json()
-    identity = data.get('identity')
-    room = data.get('room')
-
-    if not identity or not room:
-        return jsonify({'error': 'Missing identity or room'}), 400
-
-    payload = {
-        "jti": identity + str(int(time.time())),
-        "iss": API_KEY,
-        "sub": identity,
-        "exp": int(time.time()) + 3600,
-        "video": {
-            "room_join": True,
-            "room": room
-        }
-    }
-
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    return jsonify({'token': token, 'url': LIVEKIT_URL})
-
-# --- Start Recording Route ---
-@app.route('/start-recording/<room_name>', methods=['POST'])
-def start_recording(room_name):
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    egress_payload = {
-        "room_name": room_name,
-        "layout": "grid",
-        "output": {
-            "file": {
-                "filepath": f"/recordings/{room_name}_{int(time.time())}.mp4"
-            }
-        }
-    }
-
-    response = requests.post(LIVEKIT_EGRESS_URL, headers=headers, json=egress_payload)
-
-    if response.status_code == 200:
-        result = response.json()
-        session['egress_id'] = result.get("egress_id")
-        return jsonify({"message": "✅ Recording started"})
-    else:
-        return jsonify({"message": "❌ Failed to start recording", "details": response.text}), 500
-
-# --- Stop Recording Route ---
-@app.route('/stop-recording', methods=['POST'])
-def stop_recording():
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        return "Unauthorized", 403
-
-    egress_id = session.get('egress_id')
-    if not egress_id:
-        return jsonify({"message": "⚠️ No active recording found"})
-
-    payload = {
-        "iss": API_KEY,
-        "exp": int(time.time()) + 60,
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    stop_url = LIVEKIT_EGRESS_URL.replace('/start', '/stop')
-    response = requests.post(stop_url, headers=headers, json={"egress_id": egress_id})
-
-    if response.status_code == 200:
-        session.pop('egress_id', None)
-        return jsonify({"message": "🛑 Recording stopped"})
-    else:
-        return jsonify({"message": "❌ Failed to stop recording", "details": response.text}), 500
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
@@ -301,4 +119,19 @@ def init_db():
     db.create_all()
     return "✅ Database initialized!"
 
-# No app.run() needed for deployment
+@app.route('/export-attendance')
+def export_attendance():
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Username', 'Email', 'Class', 'Join Time', 'Leave Time'])
+
+    attendances = Attendance.query.join(User).join(ClassSession).all()
+    for a in attendances:
+        cw.writerow([a.user.username, a.user.email, a.session.class_name, a.join_time, a.leave_time])
+
+    output = si.getvalue()
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
+    )
