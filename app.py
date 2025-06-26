@@ -135,3 +135,16 @@ def export_attendance():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
     )
+
+@app.route('/join-session/<int:session_id>')
+def join_session(session_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        return redirect(url_for('login'))
+
+    existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
+    if not existing:
+        attendance = Attendance(user_id=session['user_id'], session_id=session_id)
+        db.session.add(attendance)
+        db.session.commit()
+
+    return render_template('join_session.html', room_name=session_id)
