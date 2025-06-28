@@ -103,19 +103,19 @@ def login():
 
     return render_template('login.html')
 
-@app.route('/student/dashboard')
+@app.route('/dashboard_student')
 def student_dashboard():
     if session.get('role') != 'student':
         return redirect(url_for('login'))
     return "🎓 Welcome to the Student Dashboard"
 
-@app.route('/teacher/dashboard')
+@app.route('/dashboard_teacher')
 def teacher_dashboard():
     if session.get('role') != 'teacher':
         return redirect(url_for('login'))
     return "👨‍🏫 Welcome to the Teacher Dashboard"
 
-@app.route('/admin/dashboard')
+@app.route('/dashboard_admin')
 def admin_dashboard():
     if session.get('role') != 'admin':
         return redirect(url_for('login'))
