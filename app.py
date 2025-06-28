@@ -85,8 +85,11 @@ def login():
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
+
+            flash(f"Logged in successfully as {user.role.capitalize()}")
             return redirect(url_for('dashboard'))
-        flash("Invalid credentials")
+
+        flash("Invalid username or password")
         return redirect(url_for('login'))
 
     return render_template('login.html')
@@ -95,7 +98,7 @@ def login():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    return "🎉 Logged in successfully!"
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
@@ -174,4 +177,3 @@ def join_session(session_id):
         db.session.commit()
 
     return render_template('join_session.html', room_name=session_id)
-
