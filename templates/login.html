@@ -41,7 +41,7 @@
       font-weight: 600;
     }
 
-    input, select {
+    input {
       width: 100%;
       padding: 10px;
       margin-bottom: 18px;
@@ -100,9 +100,9 @@
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-        <div class="flash">
-          {{ messages[0] }}
-        </div>
+        {% for message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
 

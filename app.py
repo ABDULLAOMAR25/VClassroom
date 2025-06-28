@@ -87,18 +87,39 @@ def login():
             session['role'] = user.role
 
             flash(f"Logged in successfully as {user.role.capitalize()}")
-            return redirect(url_for('dashboard'))
+
+            if user.role == 'student':
+                return redirect(url_for('student_dashboard'))
+            elif user.role == 'teacher':
+                return redirect(url_for('teacher_dashboard'))
+            elif user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            else:
+                flash("Role not recognized.")
+                return redirect(url_for('login'))
 
         flash("Invalid username or password")
         return redirect(url_for('login'))
 
     return render_template('login.html')
 
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
+@app.route('/student/dashboard')
+def student_dashboard():
+    if session.get('role') != 'student':
         return redirect(url_for('login'))
-    return "🎉 Logged in successfully!"
+    return "🎓 Welcome to the Student Dashboard"
+
+@app.route('/teacher/dashboard')
+def teacher_dashboard():
+    if session.get('role') != 'teacher':
+        return redirect(url_for('login'))
+    return "👨‍🏫 Welcome to the Teacher Dashboard"
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+    return "🛠️ Welcome to the Admin Dashboard"
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
