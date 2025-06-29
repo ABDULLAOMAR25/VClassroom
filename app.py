@@ -9,6 +9,7 @@ import zipfile
 import csv
 from io import StringIO
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +17,7 @@ load_dotenv()
 # Flask App Setup
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
+CORS(app)  # Allow cross-origin requests (useful for fetch requests)
 
 # LiveKit Config
 API_KEY = os.getenv("LIVEKIT_API_KEY")
@@ -211,7 +213,7 @@ def join_session(session_id):
         db.session.add(attendance)
         db.session.commit()
 
-    return render_template('live_video_classroom.html', room_name=session_id)
+    return render_template('live_video_classroom.html', room_name=str(session_id))
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
@@ -224,11 +226,10 @@ def get_token():
 
     payload = {
         "sub": identity,
-        "room": room,
+        "room": str(room),
         "exp": int(time.time()) + 3600
     }
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-
     return jsonify({"token": token, "url": LIVEKIT_URL})
 
 @app.route('/record')
