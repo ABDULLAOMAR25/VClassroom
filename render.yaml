@@ -5,15 +5,20 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-      - key: ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
-        value: your_secret_key
-      - key: APISvyjdbYaJSG4
-        sync: false
-      - key: yBvpF6ztS22hxOG6qaAuvfR9gA5HbC0BaamEHmjyFXM
-        sync: false
-      - key: wss://vclassroom-wwi9i8el.livekit.cloud
-        sync: false
-      - key: postgresql://liveclassroom_db_user:4LlknNrJn7DU6EHfwtg7sAugWROGLCVJ@dpg-d0nem3idbo4c73c3ldf0-a/liveclassroom_db
-        fromDatabase:
-          name: postgresql://...
-          property: connectionString
+      - key: FLASK_SECRET_KEY
+        value: ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
+
+      - key: LIVEKIT_API_KEY
+        value: APISvyjdbYaJSG4
+
+      - key: LIVEKIT_API_SECRET
+        value: yBvpF6ztS22hxOG6qaAuvfR9gA5HbC0BaamEHmjyFXM
+
+      - key: LIVEKIT_URL
+        value: wss://vclassroom-wwi9i8el.livekit.cloud
+
+      - key: LIVEKIT_EGRESS_URL
+        value: https://vclassroom-wwi9i8el.livekit.cloud/egress/start
+
+      - key: DATABASE_URL
+        value: postgresql://vclassroom_user:F4oJqnLnGzsVMOaceXAcRdYmd3Ay5JkK@dpg-d1egm8qdbo4c73eobkd0-a:5432/vclassroom
