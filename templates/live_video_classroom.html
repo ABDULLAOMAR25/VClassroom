@@ -154,11 +154,15 @@
 
     async function connectToRoom() {
       try {
-        const res = await fetch('/get_token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identity, room: roomName })
-        });
+        const response = await fetch("/get_token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    identity: identity,
+    room: roomName
+  }),
+});
+
 
         if (!res.ok) {
           const text = await res.text();
