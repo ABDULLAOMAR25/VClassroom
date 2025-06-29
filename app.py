@@ -102,6 +102,12 @@ def login():
 
     return render_template('login.html')
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("Logged out successfully.")
+    return redirect(url_for('login'))
+
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
@@ -201,3 +207,15 @@ def join_session(session_id):
         db.session.commit()
 
     return render_template('join_session.html', room_name=session_id)
+
+@app.route('/record')
+def record():
+    return render_template('record.html')
+
+@app.route('/create-session')
+def create_session():
+    return render_template('create_session.html')
+
+@app.route('/sessions')
+def sessions():
+    return render_template('sessions.html')
