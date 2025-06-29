@@ -222,10 +222,19 @@ def get_token():
     if not identity or not room:
         return jsonify({"error": "Missing identity or room"}), 400
 
+    now = int(time.time())
     payload = {
-        "sub": identity,
+        "exp": now + 3600,
+        "nbf": now,
+        "iss": API_KEY,
+        "sub": f"user:{identity}",
         "room": room,
-        "exp": int(time.time()) + 3600
+        "video": True,
+        "audio": True,
+        "permissions": {
+            "canPublish": True,
+            "canSubscribe": True
+        }
     }
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
 
