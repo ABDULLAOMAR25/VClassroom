@@ -144,7 +144,7 @@
     </div>
   </div>
 
-  <script>
+ <script>
     const roomName = "{{ room_name }}";
     const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
@@ -164,7 +164,7 @@
           const text = await res.text();
           throw new Error(`Server error: ${res.status} - ${text}`);
         }
-
+        
         const data = await res.json();
 
         room = new Livekit.Room();
@@ -252,6 +252,6 @@
     document.getElementById("btnSend").onclick = sendMessage;
 
     connectToRoom();
-  </script>
+</script>
 </body>
 </html>
