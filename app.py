@@ -89,11 +89,11 @@ def login():
             flash(f"Logged in successfully as {user.role.capitalize()}")
 
             if user.role == 'student':
-                return redirect(url_for('student_dashboard'))
+                return redirect(url_for('dashboard_student'))
             elif user.role == 'teacher':
-                return redirect(url_for('teacher_dashboard'))
+                return redirect(url_for('dashboard_teacher'))
             elif user.role == 'admin':
-                return redirect(url_for('admin_dashboard'))
+                return redirect(url_for('dashboard_admin'))
             else:
                 flash("Role not recognized.")
                 return redirect(url_for('login'))
