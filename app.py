@@ -102,6 +102,13 @@ def login():
         return redirect(url_for('login'))
 
     return render_template('login.html')
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
 
 @app.route('/dashboard_student')
 def student_dashboard():
