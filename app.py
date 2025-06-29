@@ -77,6 +77,8 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    next_page = request.args.get('next')
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -86,6 +88,9 @@ def login():
             session['user_id'] = user.id
             session['role'] = user.role
             flash(f"Logged in successfully as {user.role.capitalize()}")
+
+            if next_page:
+                return redirect(next_page)
 
             if user.role == 'student':
                 return redirect(url_for('student_dashboard'))
@@ -197,8 +202,8 @@ def export_attendance():
 
 @app.route('/join_session/<int:session_id>')
 def join_session(session_id):
-    if 'user_id' not in session or session.get('role') != 'student':
-        return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login', next=request.path))
 
     existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
     if not existing:
@@ -206,7 +211,25 @@ def join_session(session_id):
         db.session.add(attendance)
         db.session.commit()
 
-    return render_template('join_session.html', room_name=session_id)
+    return render_template('live_video_classroom.html', room_name=session_id)
+
+@app.route('/get_token', methods=['POST'])
+def get_token():
+    data = request.get_json()
+    identity = data.get("identity")
+    room = data.get("room")
+
+    if not identity or not room:
+        return jsonify({"error": "Missing identity or room"}), 400
+
+    payload = {
+        "sub": identity,
+        "room": room,
+        "exp": int(time.time()) + 3600
+    }
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+
+    return jsonify({"token": token, "url": LIVEKIT_URL})
 
 @app.route('/record')
 def record():
@@ -214,25 +237,17 @@ def record():
 
 @app.route('/create-session', methods=['GET', 'POST'])
 def create_session():
-    if session.get('role') != 'teacher':
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
-        class_name = request.form.get('class_name')
-        if class_name:
-            new_session = ClassSession(class_name=class_name)
-            db.session.add(new_session)
-            db.session.commit()
-            flash("Class session created successfully.")
-            return redirect(url_for('sessions'))
-
+        class_name = request.form['class_name']
+        session_obj = ClassSession(class_name=class_name)
+        db.session.add(session_obj)
+        db.session.commit()
+        flash('Session created successfully!')
+        return redirect(url_for('sessions'))
     return render_template('create_session.html')
 
 @app.route('/sessions')
 def sessions():
-    if session.get('role') != 'teacher':
-        return redirect(url_for('login'))
-
     all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('sessions.html', sessions=all_sessions)
 
@@ -242,7 +257,7 @@ def start_session(session_id):
     session_obj.is_live = True
     session_obj.start_time = datetime.utcnow()
     db.session.commit()
-    flash("Session started.")
+    flash("Session started!")
     return redirect(url_for('sessions'))
 
 @app.route('/end-session/<int:session_id>')
@@ -251,5 +266,5 @@ def end_session(session_id):
     session_obj.is_live = False
     session_obj.end_time = datetime.utcnow()
     db.session.commit()
-    flash("Session ended.")
+    flash("Session ended!")
     return redirect(url_for('sessions'))
