@@ -211,7 +211,7 @@ def join_session(session_id):
         db.session.add(attendance)
         db.session.commit()
 
-    return render_template('join_session.html', room_name=session_id)
+    return render_template('live_video_classroom.html', room_name=session_id)
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
