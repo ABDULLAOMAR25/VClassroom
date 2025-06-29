@@ -6,7 +6,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import zipfile
-import requests
 import csv
 from io import StringIO
 from werkzeug.utils import secure_filename
@@ -71,6 +70,7 @@ class Attendance(db.Model):
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
+# --- Routes ---
 @app.route('/')
 def index():
     return "✅ VClassroom Flask App is running!"
@@ -85,30 +85,26 @@ def login():
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
-
             flash(f"Logged in successfully as {user.role.capitalize()}")
 
             if user.role == 'student':
-                return redirect(url_for('dashboard_student'))
+                return redirect(url_for('student_dashboard'))
             elif user.role == 'teacher':
-                return redirect(url_for('dashboard_teacher'))
+                return redirect(url_for('teacher_dashboard'))
             elif user.role == 'admin':
-                return redirect(url_for('dashboard_admin'))
-            else:
-                flash("Role not recognized.")
-                return redirect(url_for('login'))
+                return redirect(url_for('admin_dashboard'))
+
+            flash("Role not recognized.")
+            return redirect(url_for('login'))
 
         flash("Invalid username or password")
         return redirect(url_for('login'))
 
     return render_template('login.html')
+
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
-
-@app.route('/login')
-def login():
-    return render_template('login.html')
 
 @app.route('/dashboard_student')
 def student_dashboard():
@@ -116,13 +112,11 @@ def student_dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard_student.html')
 
-
 @app.route('/dashboard_teacher')
 def teacher_dashboard():
     if session.get('role') != 'teacher':
         return redirect(url_for('login'))
     return render_template('dashboard_teacher.html')
-
 
 @app.route('/dashboard_admin')
 def admin_dashboard():
