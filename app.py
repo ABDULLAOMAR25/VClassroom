@@ -107,19 +107,21 @@ def login():
 def student_dashboard():
     if session.get('role') != 'student':
         return redirect(url_for('login'))
-    return "🎓 Welcome to the Student Dashboard"
+    return render_template('dashboard_student.html')
+
 
 @app.route('/dashboard_teacher')
 def teacher_dashboard():
     if session.get('role') != 'teacher':
         return redirect(url_for('login'))
-    return "👨‍🏫 Welcome to the Teacher Dashboard"
+    return render_template('dashboard_teacher.html')
+
 
 @app.route('/dashboard_admin')
 def admin_dashboard():
     if session.get('role') != 'admin':
         return redirect(url_for('login'))
-    return "🛠️ Welcome to the Admin Dashboard"
+    return render_template('dashboard_admin.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
