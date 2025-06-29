@@ -212,10 +212,44 @@ def join_session(session_id):
 def record():
     return render_template('record.html')
 
-@app.route('/create-session')
+@app.route('/create-session', methods=['GET', 'POST'])
 def create_session():
+    if session.get('role') != 'teacher':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        class_name = request.form.get('class_name')
+        if class_name:
+            new_session = ClassSession(class_name=class_name)
+            db.session.add(new_session)
+            db.session.commit()
+            flash("Class session created successfully.")
+            return redirect(url_for('sessions'))
+
     return render_template('create_session.html')
 
 @app.route('/sessions')
 def sessions():
-    return render_template('sessions.html')
+    if session.get('role') != 'teacher':
+        return redirect(url_for('login'))
+
+    all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
+    return render_template('sessions.html', sessions=all_sessions)
+
+@app.route('/start-session/<int:session_id>')
+def start_session(session_id):
+    session_obj = ClassSession.query.get_or_404(session_id)
+    session_obj.is_live = True
+    session_obj.start_time = datetime.utcnow()
+    db.session.commit()
+    flash("Session started.")
+    return redirect(url_for('sessions'))
+
+@app.route('/end-session/<int:session_id>')
+def end_session(session_id):
+    session_obj = ClassSession.query.get_or_404(session_id)
+    session_obj.is_live = False
+    session_obj.end_time = datetime.utcnow()
+    db.session.commit()
+    flash("Session ended.")
+    return redirect(url_for('sessions'))
