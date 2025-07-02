@@ -135,18 +135,16 @@ def admin_dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard_admin.html')
 
+from sqlalchemy import text  # Add this import at the top if not present
+
 @app.route('/sessions')
 def sessions():
-    # Step 1: Clean invalid datetime values BEFORE querying
-    db.session.execute(
-        "UPDATE class_session SET start_time = NULL WHERE start_time = ''"
-    )
-    db.session.execute(
-        "UPDATE class_session SET end_time = NULL WHERE end_time = ''"
-    )
+    # Clean up bad datetime values BEFORE querying
+    db.session.execute(text("UPDATE class_session SET start_time = NULL WHERE start_time = ''"))
+    db.session.execute(text("UPDATE class_session SET end_time = NULL WHERE end_time = ''"))
     db.session.commit()
 
-    # Step 2: Now safely fetch all sessions
+    # Now safe to query all sessions
     all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('sessions.html', sessions=all_sessions)
 
