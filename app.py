@@ -189,7 +189,10 @@ def join_session(session_id):
         db.session.add(attendance)
         db.session.commit()
 
-    return render_template('live_video_classroom.html', room_name=str(session_id), identity=session['user_id'])
+    # Here pass 'room_name' and 'identity' to template for JavaScript
+    return render_template('live_video_classroom.html',
+                           room_name=str(session_id),
+                           identity=str(session['user_id']))
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
@@ -197,8 +200,16 @@ def get_token():
     identity = data.get("identity")
     room = data.get("room")
 
+    print("DEBUG - identity:", identity)
+    print("DEBUG - room:", room)
+    print("DEBUG - API_KEY:", API_KEY)
+    print("DEBUG - API_SECRET:", API_SECRET)
+    print("DEBUG - LIVEKIT_URL:", LIVEKIT_URL)
+
     if not identity or not room:
         return jsonify({"error": "Missing identity or room"}), 400
+    if not API_KEY or not API_SECRET or not LIVEKIT_URL:
+        return jsonify({"error": "Server misconfiguration - missing LiveKit credentials"}), 500
 
     now = int(time.time())
     payload = {
@@ -215,11 +226,14 @@ def get_token():
         }
     }
 
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
-
-    return jsonify({"token": token, "url": LIVEKIT_URL})
+    try:
+        token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
+        return jsonify({"token": token, "url": LIVEKIT_URL})
+    except Exception as e:
+        print("JWT Encode Error:", e)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/record')
 def record():
