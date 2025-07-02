@@ -78,26 +78,33 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     next_page = request.args.get('next')
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
             flash(f"Logged in successfully as {user.role.capitalize()}")
+
             if next_page:
                 return redirect(next_page)
+
             if user.role == 'student':
                 return redirect(url_for('student_dashboard'))
             elif user.role == 'teacher':
                 return redirect(url_for('teacher_dashboard'))
             elif user.role == 'admin':
                 return redirect(url_for('admin_dashboard'))
+
             flash("Role not recognized.")
             return redirect(url_for('login'))
+
         flash("Invalid username or password")
         return redirect(url_for('login'))
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -128,120 +135,16 @@ def admin_dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard_admin.html')
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_resources():
-    if request.method == 'POST':
-        video = request.files.get('video')
-        notes = request.files.get('notes')
-        send_zip = request.form.get('send_zip')
-        saved_files = []
-        if video and allowed_file(video.filename, ALLOWED_VIDEO):
-            filename = secure_filename(video.filename)
-            video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            saved_files.append(filename)
-        if notes and allowed_file(notes.filename, ALLOWED_NOTES):
-            filename = secure_filename(notes.filename)
-            notes.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            saved_files.append(filename)
-        if send_zip and saved_files:
-            zip_path = os.path.join(app.config['UPLOAD_FOLDER'], 'resources.zip')
-            with zipfile.ZipFile(zip_path, 'w') as zipf:
-                for f in saved_files:
-                    zipf.write(os.path.join(app.config['UPLOAD_FOLDER'], f), arcname=f)
-            flash('Files uploaded and zipped successfully.')
-        else:
-            flash('Files uploaded successfully.')
-        return redirect(url_for('upload_resources'))
-    return render_template('upload.html')
-
-@app.route('/resources')
-def list_resources():
-    files = []
-    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-        filetype = filename.rsplit('.', 1)[1].upper()
-        files.append({'filename': filename, 'filetype': filetype})
-    return render_template('resources.html', resources=files)
-
-@app.route('/download/<path:filename>')
-def download_resource(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-
-@app.route('/init-db')
-def init_db():
-    db.create_all()
-    return "✅ Database initialized!"
-
-@app.route('/fix-bad-dates')
-def fix_bad_dates():
-    sessions = ClassSession.query.all()
-    fixed = False
-    for s in sessions:
-        if isinstance(s.start_time, str):
+@app.route('/sessions')
+def sessions():
+    all_sessions = ClassSession.query.all()
+    for s in all_sessions:
+        if isinstance(s.start_time, str) or s.start_time == '':
             s.start_time = None
-            fixed = True
-        if isinstance(s.end_time, str):
+        if isinstance(s.end_time, str) or s.end_time == '':
             s.end_time = None
-            fixed = True
-    if fixed:
-        db.session.commit()
-        return "✅ Fixed invalid date formats."
-    return "✅ No invalid date formats found."
-
-@app.route('/export-attendance')
-def export_attendance():
-    si = StringIO()
-    cw = csv.writer(si)
-    cw.writerow(['Username', 'Email', 'Class', 'Join Time', 'Leave Time'])
-    attendances = Attendance.query.join(User).join(ClassSession).all()
-    for a in attendances:
-        cw.writerow([a.user.username, a.user.email, a.session.class_name, a.join_time, a.leave_time])
-    output = si.getvalue()
-    return Response(
-        output,
-        mimetype='text/csv',
-        headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
-    )
-
-@app.route('/join_session/<int:session_id>')
-def join_session(session_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login', next=request.path))
-    existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
-    if not existing:
-        attendance = Attendance(user_id=session['user_id'], session_id=session_id)
-        db.session.add(attendance)
-        db.session.commit()
-    return render_template('live_video_classroom.html', room_name=str(session_id))
-
-@app.route('/get_token', methods=['POST'])
-def get_token():
-    data = request.get_json()
-    identity = data.get("identity")
-    room = data.get("room")
-    if not identity or not room:
-        return jsonify({"error": "Missing identity or room"}), 400
-    now = int(time.time())
-    payload = {
-        "iss": API_KEY,
-        "sub": f"user:{identity}",
-        "iat": now,
-        "exp": now + 3600,
-        "nbf": now,
-        "grants": {
-            "roomJoin": True,
-            "room": room,
-            "canPublish": True,
-            "canSubscribe": True
-        }
-    }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
-    return jsonify({"token": token, "url": LIVEKIT_URL})
-
-@app.route('/record')
-def record():
-    return render_template('record.html')
+    db.session.commit()
+    return render_template('sessions.html', sessions=all_sessions)
 
 @app.route('/create-session', methods=['GET', 'POST'])
 def create_session():
@@ -253,23 +156,6 @@ def create_session():
         flash('Session created successfully!')
         return redirect(url_for('sessions'))
     return render_template('create_session.html')
-
-@app.route('/sessions')
-def sessions():
-    # Ensure no invalid datetime values exist
-    sessions = ClassSession.query.all()
-    fixed = False
-    for s in sessions:
-        if isinstance(s.start_time, str):
-            s.start_time = None
-            fixed = True
-        if isinstance(s.end_time, str):
-            s.end_time = None
-            fixed = True
-    if fixed:
-        db.session.commit()
-    all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
-    return render_template('sessions.html', sessions=all_sessions)
 
 @app.route('/start-session/<int:session_id>')
 def start_session(session_id):
@@ -288,6 +174,118 @@ def end_session(session_id):
     db.session.commit()
     flash("Session ended!")
     return redirect(url_for('sessions'))
+
+@app.route('/init-db')
+def init_db():
+    db.create_all()
+    return "✅ Database initialized!"
+
+@app.route('/join_session/<int:session_id>')
+def join_session(session_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login', next=request.path))
+
+    existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
+    if not existing:
+        attendance = Attendance(user_id=session['user_id'], session_id=session_id)
+        db.session.add(attendance)
+        db.session.commit()
+
+    return render_template('live_video_classroom.html', room_name=str(session_id))
+
+@app.route('/get_token', methods=['POST'])
+def get_token():
+    data = request.get_json()
+    identity = data.get("identity")
+    room = data.get("room")
+
+    if not identity or not room:
+        return jsonify({"error": "Missing identity or room"}), 400
+
+    now = int(time.time())
+    payload = {
+        "iss": API_KEY,
+        "sub": f"user:{identity}",
+        "iat": now,
+        "exp": now + 3600,
+        "nbf": now,
+        "grants": {
+            "roomJoin": True,
+            "room": room,
+            "canPublish": True,
+            "canSubscribe": True
+        }
+    }
+
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+
+    return jsonify({"token": token, "url": LIVEKIT_URL})
+
+@app.route('/record')
+def record():
+    return render_template('record.html')
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_resources():
+    if request.method == 'POST':
+        video = request.files.get('video')
+        notes = request.files.get('notes')
+        send_zip = request.form.get('send_zip')
+
+        saved_files = []
+        if video and allowed_file(video.filename, ALLOWED_VIDEO):
+            filename = secure_filename(video.filename)
+            video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            saved_files.append(filename)
+
+        if notes and allowed_file(notes.filename, ALLOWED_NOTES):
+            filename = secure_filename(notes.filename)
+            notes.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            saved_files.append(filename)
+
+        if send_zip and saved_files:
+            zip_path = os.path.join(app.config['UPLOAD_FOLDER'], 'resources.zip')
+            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                for f in saved_files:
+                    zipf.write(os.path.join(app.config['UPLOAD_FOLDER'], f), arcname=f)
+            flash('Files uploaded and zipped successfully.')
+        else:
+            flash('Files uploaded successfully.')
+
+        return redirect(url_for('upload_resources'))
+
+    return render_template('upload.html')
+
+@app.route('/resources')
+def list_resources():
+    files = []
+    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+        filetype = filename.rsplit('.', 1)[1].upper()
+        files.append({'filename': filename, 'filetype': filetype})
+    return render_template('resources.html', resources=files)
+
+@app.route('/download/<path:filename>')
+def download_resource(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+
+@app.route('/export-attendance')
+def export_attendance():
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Username', 'Email', 'Class', 'Join Time', 'Leave Time'])
+
+    attendances = Attendance.query.join(User).join(ClassSession).all()
+    for a in attendances:
+        cw.writerow([a.user.username, a.user.email, a.session.class_name, a.join_time, a.leave_time])
+
+    output = si.getvalue()
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
