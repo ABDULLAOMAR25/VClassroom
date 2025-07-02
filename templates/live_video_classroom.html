@@ -6,6 +6,7 @@
   <title>Live Video Classroom</title>
   <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
   <style>
+    /* Your exact CSS from before */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -125,7 +126,7 @@
       </div>
       <div id="controls">
         <button id="btnCamera">📷 Camera</button>
-        <button id="btnMic">🎤 Mic</button>
+        <button id="btnMic">🎤 Mic On</button>
         <button id="btnRaiseHand">✋ Raise Hand</button>
       </div>
     </div>
@@ -145,7 +146,10 @@
   </div>
 
   <script>
-    const roomName = "{{ room_name }}"; // Inject from backend
+    console.log("Live video classroom script started.");
+
+    // Use the Flask template variable correctly
+    const roomName = "{{ room_name }}";
     const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
     let room;
@@ -154,13 +158,11 @@
 
     async function connectToRoom() {
       try {
+        console.log("Requesting token for room:", roomName, "identity:", identity);
         const response = await fetch("/get_token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            identity: identity,
-            room: roomName
-          }),
+          body: JSON.stringify({ identity: identity, room: roomName })
         });
 
         if (!response.ok) {
@@ -169,16 +171,21 @@
         }
 
         const data = await response.json();
+        console.log("Received token data:", data);
 
-        room = new LiveKit.Room();
+        // Initialize the LiveKit Room instance
+        room = new Livekit.Room();
 
+        // Setup event handlers
         room.on("trackSubscribed", (track, publication, participant) => {
+          console.log(`Track subscribed: ${track.kind} from ${participant.identity}`);
           if (track.kind === "video") {
             track.attach(document.getElementById("remote-video"));
           }
         });
 
         room.on("participantConnected", participant => {
+          console.log("Participant connected:", participant.identity);
           const list = document.getElementById("participant-list");
           const li = document.createElement("li");
           li.id = participant.sid;
@@ -187,6 +194,7 @@
         });
 
         room.on("participantDisconnected", participant => {
+          console.log("Participant disconnected:", participant.identity);
           const li = document.getElementById(participant.sid);
           if (li) li.remove();
         });
@@ -195,6 +203,7 @@
         alert("✅ Connected to room. Click 📷 Camera to start your camera.");
       } catch (error) {
         alert("Error connecting to room: " + error.message);
+        console.error("Error connecting to room:", error);
       }
     }
 
@@ -204,15 +213,17 @@
         return;
       }
       try {
-        localTracks = await LiveKit.createLocalTracks({ audio: true, video: true });
+        localTracks = await Livekit.createLocalTracks({ audio: true, video: true });
         for (const track of localTracks) {
           await room.localParticipant.publishTrack(track);
           if (track.kind === "video") {
             track.attach(document.getElementById("local-video"));
           }
         }
+        console.log("Camera started and tracks published.");
       } catch (err) {
         alert("Could not start camera: " + err.message);
+        console.error("Start camera error:", err);
       }
     }
 
