@@ -224,20 +224,20 @@ def get_token():
 
     now = int(time.time())
     payload = {
-        "exp": now + 3600,
-        "nbf": now,
         "iss": API_KEY,
         "sub": f"user:{identity}",
-        "room": room,
-        "video": True,
-        "audio": True,
-        "permissions": {
+        "iat": now,
+        "exp": now + 3600,
+        "nbf": now,
+        "grants": {
+            "roomJoin": True,
+            "room": room,
             "canPublish": True,
             "canSubscribe": True
         }
     }
-    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
 
+    token = jwt.encode(payload, API_SECRET, algorithm="HS256")
     return jsonify({"token": token, "url": LIVEKIT_URL})
 
 @app.route('/record')
