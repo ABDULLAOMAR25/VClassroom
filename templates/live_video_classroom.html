@@ -145,7 +145,7 @@
   </div>
 
   <script>
-    const roomName = "{{ room_name }}";
+    const roomName = "{{ room_name }}"; // Inject from backend
     const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
     let room;
@@ -170,7 +170,7 @@
 
         const data = await response.json();
 
-        room = new Livekit.Room();
+        room = new LiveKit.Room();
 
         room.on("trackSubscribed", (track, publication, participant) => {
           if (track.kind === "video") {
@@ -204,7 +204,7 @@
         return;
       }
       try {
-        localTracks = await Livekit.createLocalTracks({ audio: true, video: true });
+        localTracks = await LiveKit.createLocalTracks({ audio: true, video: true });
         for (const track of localTracks) {
           await room.localParticipant.publishTrack(track);
           if (track.kind === "video") {
