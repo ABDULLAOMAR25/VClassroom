@@ -282,3 +282,5 @@ def end_session(session_id):
     db.session.commit()
     flash("Session ended!")
     return redirect(url_for('sessions'))
+if __name__ == '__main__':
+    app.run(debug=True)
