@@ -83,6 +83,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
+        # Note: In production, NEVER store or check plaintext passwords!
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
@@ -238,6 +239,10 @@ def get_token():
     }
 
     token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+    # PyJWT >= 2.x returns bytes, decode to str if needed
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+
     return jsonify({"token": token, "url": LIVEKIT_URL})
 
 @app.route('/record')
