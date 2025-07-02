@@ -9,6 +9,7 @@ import zipfile
 import csv
 from io import StringIO
 from werkzeug.utils import secure_filename
+from sqlalchemy import text
 
 # Load environment variables
 load_dotenv()
@@ -135,16 +136,11 @@ def admin_dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard_admin.html')
 
-from sqlalchemy import text  # Add this import at the top if not present
-
 @app.route('/sessions')
 def sessions():
-    # Clean up bad datetime values BEFORE querying
     db.session.execute(text("UPDATE class_session SET start_time = NULL WHERE start_time = ''"))
     db.session.execute(text("UPDATE class_session SET end_time = NULL WHERE end_time = ''"))
     db.session.commit()
-
-    # Now safe to query all sessions
     all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('sessions.html', sessions=all_sessions)
 
@@ -193,7 +189,7 @@ def join_session(session_id):
         db.session.add(attendance)
         db.session.commit()
 
-    return render_template('live_video_classroom.html', room_name=str(session_id))
+    return render_template('live_video_classroom.html', room_name=str(session_id), identity=session['user_id'])
 
 @app.route('/get_token', methods=['POST'])
 def get_token():

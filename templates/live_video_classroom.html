@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Live Video Classroom</title>
-  <script src="https://unpkg.com/@livekit/client/dist/livekit-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@livekit/client/dist/livekit-client.umd.min.js"></script>
   <style>
-    /* Your exact CSS from before */
+    /* Same CSS as you had */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -146,10 +146,7 @@
   </div>
 
   <script>
-    console.log("Live video classroom script started.");
-
-    // Use the Flask template variable correctly
-    const roomName = "{{ room_name }}";
+    const roomName = "default-room";
     const identity = prompt("Enter your name:") || "guest_" + Math.floor(Math.random() * 1000);
 
     let room;
@@ -158,86 +155,74 @@
 
     async function connectToRoom() {
       try {
-        console.log("Requesting token for room:", roomName, "identity:", identity);
         const response = await fetch("/get_token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ identity: identity, room: roomName })
         });
 
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Server error: ${response.status} - ${text}`);
-        }
-
         const data = await response.json();
-        console.log("Received token data:", data);
+        const { token, url } = data;
 
-        // Initialize the LiveKit Room instance
         room = new Livekit.Room();
 
-        // Setup event handlers
         room.on("trackSubscribed", (track, publication, participant) => {
-          console.log(`Track subscribed: ${track.kind} from ${participant.identity}`);
           if (track.kind === "video") {
             track.attach(document.getElementById("remote-video"));
           }
         });
 
         room.on("participantConnected", participant => {
-          console.log("Participant connected:", participant.identity);
-          const list = document.getElementById("participant-list");
           const li = document.createElement("li");
           li.id = participant.sid;
           li.textContent = participant.identity;
-          list.appendChild(li);
+          document.getElementById("participant-list").appendChild(li);
         });
 
         room.on("participantDisconnected", participant => {
-          console.log("Participant disconnected:", participant.identity);
           const li = document.getElementById(participant.sid);
           if (li) li.remove();
         });
 
-        await room.connect(data.url, data.token);
-        alert("✅ Connected to room. Click 📷 Camera to start your camera.");
+        await room.connect(url, token);
+        alert("✅ Connected to room. Click 📷 Camera to start.");
       } catch (error) {
-        alert("Error connecting to room: " + error.message);
-        console.error("Error connecting to room:", error);
+        alert("❌ Error connecting to room: " + error.message);
+        console.error(error);
       }
     }
 
     async function startCamera() {
       if (!room) {
-        alert("You are not connected to the room yet.");
+        alert("Please connect to the room first.");
         return;
       }
+
       try {
         localTracks = await Livekit.createLocalTracks({ audio: true, video: true });
+
         for (const track of localTracks) {
           await room.localParticipant.publishTrack(track);
           if (track.kind === "video") {
             track.attach(document.getElementById("local-video"));
           }
         }
-        console.log("Camera started and tracks published.");
       } catch (err) {
-        alert("Could not start camera: " + err.message);
-        console.error("Start camera error:", err);
+        alert("Camera error: " + err.message);
       }
     }
 
     function toggleMic() {
       const audioTrack = localTracks.find(t => t.kind === "audio");
       if (!audioTrack) return;
+
+      micEnabled = !micEnabled;
       if (micEnabled) {
-        audioTrack.disable();
-        micEnabled = false;
-        document.getElementById("btnMic").textContent = "🎤 Mic Off";
-      } else {
         audioTrack.enable();
-        micEnabled = true;
         document.getElementById("btnMic").textContent = "🎤 Mic On";
+      } else {
+        audioTrack.disable();
+        document.getElementById("btnMic").textContent = "🎤 Mic Off";
       }
     }
 
@@ -251,13 +236,15 @@
 
     function sendMessage() {
       const input = document.getElementById("messageBox");
-      if (!input.value.trim()) return;
+      const msg = input.value.trim();
+      if (!msg) return;
+
       const messages = document.getElementById("messages");
       const div = document.createElement("div");
-      div.textContent = `${identity}: ${input.value}`;
+      div.textContent = `${identity}: ${msg}`;
       messages.appendChild(div);
-      input.value = "";
       messages.scrollTop = messages.scrollHeight;
+      input.value = "";
     }
 
     document.getElementById("btnCamera").onclick = startCamera;
