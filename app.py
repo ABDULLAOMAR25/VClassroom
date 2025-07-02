@@ -137,13 +137,17 @@ def admin_dashboard():
 
 @app.route('/sessions')
 def sessions():
-    all_sessions = ClassSession.query.all()
-    for s in all_sessions:
-        if isinstance(s.start_time, str) or s.start_time == '':
-            s.start_time = None
-        if isinstance(s.end_time, str) or s.end_time == '':
-            s.end_time = None
+    # Step 1: Clean invalid datetime values BEFORE querying
+    db.session.execute(
+        "UPDATE class_session SET start_time = NULL WHERE start_time = ''"
+    )
+    db.session.execute(
+        "UPDATE class_session SET end_time = NULL WHERE end_time = ''"
+    )
     db.session.commit()
+
+    # Step 2: Now safely fetch all sessions
+    all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('sessions.html', sessions=all_sessions)
 
 @app.route('/create-session', methods=['GET', 'POST'])
