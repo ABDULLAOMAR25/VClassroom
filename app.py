@@ -199,7 +199,7 @@ def get_token():
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
         if isinstance(token, bytes):
             token = token.decode('utf-8')
-        return jsonify({"token": token})
+        return jsonify({"token": token, "url": LIVEKIT_URL})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
