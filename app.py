@@ -177,20 +177,21 @@ def get_token():
         return jsonify({"error": "Missing LiveKit credentials"}), 500
 
     now = int(time.time())
-    payload = {
-        "iss": API_KEY,
-        "sub": identity,
-        "iat": now,
-        "exp": now + 3600,
-        "nbf": now,
-        "video": True,
-        "grants": {
-            "roomJoin": True,
-            "room": room,
-            "canPublish": True,
-            "canSubscribe": True
-        }
+exp = now + 3600  # token is valid for 1 hour
+
+payload = {
+    "iss": API_KEY,
+    "sub": f"user:{identity}",
+    "iat": now,
+    "exp": exp,
+    "nbf": now,
+    "grants": {
+        "roomJoin": True,
+        "room": room,
+        "canPublish": True,
+        "canSubscribe": True
     }
+}
 
     try:
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
