@@ -166,16 +166,15 @@ def join_session(session_id):
                            room_name=str(session_id),
                            identity=str(session['user_id']))
 
-from jwt import encode as jwt_encode  # Ensure you're using PyJWT correctly
-
-@app.route('/get_token', methods=['POST'])
 @app.route('/get_token', methods=['POST'])
 def get_token():
     data = request.get_json()
-    identity = data.get("identity")    room = data.get("room")
+    identity = data.get("identity")
+    room = data.get("room")
 
     if not identity or not room:
         return jsonify({"error": "Missing identity or room"}), 400
+
     if not API_KEY or not API_SECRET or not LIVEKIT_URL:
         return jsonify({"error": "LiveKit config missing"}), 500
 
@@ -200,9 +199,9 @@ def get_token():
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
         if isinstance(token, bytes):
             token = token.decode('utf-8')
-        return jsonify({"token": token})    except Exception as e:
+        return jsonify({"token": token})
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/record')
 def record():
