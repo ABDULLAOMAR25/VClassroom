@@ -190,6 +190,7 @@ def get_token():
         "exp": now + 3600,
         "nbf": now,
         "grants": {
+            "identity": identity,  # ✅ Fix: Include identity here
             "roomJoin": True,
             "room": room,
             "canPublish": True,
