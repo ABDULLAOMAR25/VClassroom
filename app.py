@@ -166,11 +166,14 @@ def join_session(session_id):
                            room_name=str(session_id),
                            identity=str(session['user_id']))
 
+from jwt import encode as jwt_encode  # Ensure you're using PyJWT correctly
+
 @app.route('/get_token', methods=['POST'])
 def get_token():
     data = request.get_json()
     identity = data.get("identity")
     room = data.get("room")
+
     print("DEBUG - identity:", identity)
     print("DEBUG - room:", room)
     print("DEBUG - API_KEY:", API_KEY)
@@ -185,26 +188,26 @@ def get_token():
     now = int(time.time())
     payload = {
         "iss": API_KEY,
-        "sub": f"user:{identity}",
         "iat": now,
         "exp": now + 3600,
         "nbf": now,
+        "video": True,
         "grants": {
-            "identity": identity,  # ✅ Fix: Include identity here
             "roomJoin": True,
             "room": room,
             "canPublish": True,
-            "canSubscribe": True
+            "canSubscribe": True,
+            "identity": identity  # ✅ Correct position: nested under "grants"
         }
     }
 
     try:
-        token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-        if isinstance(token, bytes):
+        token = jwt_encode(payload, API_SECRET, algorithm="HS256")
+        if isinstance(token, bytes):  # PyJWT v1 returns bytes, v2 returns str
             token = token.decode('utf-8')
         return jsonify({"token": token, "url": LIVEKIT_URL})
     except Exception as e:
-        print("JWT Encode Error:", e)
+        print("JWT Encode Error:", str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/record')
