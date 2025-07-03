@@ -167,38 +167,47 @@ def join_session(session_id):
                            identity=str(session['user_id']))
 @app.route('/get_token', methods=['POST'])
 def get_token():
-    data = request.get_json()
-    identity = data.get("identity")
-    room = data.get("room")
-
-    if not identity or not room:
-        return jsonify({"error": "Missing identity or room"}), 400
-    if not API_KEY or not API_SECRET:
-        return jsonify({"error": "Missing LiveKit credentials"}), 500
-
-    now = int(time.time())
-exp = now + 3600  # token is valid for 1 hour
-
-payload = {
-    "iss": API_KEY,
-    "sub": f"user:{identity}",
-    "iat": now,
-    "exp": exp,
-    "nbf": now,
-    "grants": {
-        "roomJoin": True,
-        "room": room,
-        "canPublish": True,
-        "canSubscribe": True
-    }
-}
-
     try:
+        data = request.get_json()
+        identity = data.get("identity")
+        room = data.get("room")
+
+        print("NOW:", int(time.time()))
+        print("DEBUG - identity:", identity)
+        print("DEBUG - room:", room)
+        print("DEBUG - API_KEY:", API_KEY)
+        print("DEBUG - API_SECRET:", API_SECRET)
+        print("DEBUG - LIVEKIT_URL:", LIVEKIT_URL)
+
+        if not identity or not room:
+            return jsonify({"error": "Missing identity or room"}), 400
+        if not API_KEY or not API_SECRET or not LIVEKIT_URL:
+            return jsonify({"error": "Missing LiveKit credentials"}), 500
+
+        now = int(time.time())
+        payload = {
+            "iss": API_KEY,
+            "sub": f"user:{identity}",
+            "iat": now,
+            "exp": now + 3600,
+            "nbf": now,
+            "grants": {
+                "identity": identity,
+                "roomJoin": True,
+                "room": room,
+                "canPublish": True,
+                "canSubscribe": True
+            }
+        }
+
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
         if isinstance(token, bytes):
-            token = token.decode("utf-8")
+            token = token.decode('utf-8')
+
         return jsonify({"token": token, "url": LIVEKIT_URL})
+
     except Exception as e:
+        print("JWT Encode Error:", e)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/record')
