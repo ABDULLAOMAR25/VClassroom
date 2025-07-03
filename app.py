@@ -10,35 +10,34 @@ import csv
 from io import StringIO
 from werkzeug.utils import secure_filename
 from sqlalchemy import text
+from pathlib import Path
 
-# Load environment variables
-load_dotenv()
+# --- Load environment variables ---
+load_dotenv(dotenv_path=Path('.') / '.env')  #  Explicitly load .env from current dir
 
-# Flask App Setup
+# --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 
-# LiveKit Config
+# --- LiveKit Config ---
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
 LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")
 
-# File upload configuration
+# --- File upload configuration ---
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_VIDEO = {'mp4', 'mkv', 'avi'}
 ALLOWED_NOTES = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'}
 
-# Database Configuration
+# --- Database Configuration ---
 db_url = os.getenv('DATABASE_URL')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize DB
 db = SQLAlchemy(app)
 
 # --- Models ---
@@ -63,7 +62,6 @@ class Attendance(db.Model):
     session_id = db.Column(db.Integer, db.ForeignKey('class_session.id'), nullable=False)
     join_time = db.Column(db.DateTime, default=datetime.utcnow)
     leave_time = db.Column(db.DateTime, nullable=True)
-
     user = db.relationship('User', backref='attendances')
     session = db.relationship('ClassSession', backref='attendances')
 
@@ -79,33 +77,17 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     next_page = request.args.get('next')
-
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
             flash(f"Logged in successfully as {user.role.capitalize()}")
-
-            if next_page:
-                return redirect(next_page)
-
-            if user.role == 'student':
-                return redirect(url_for('student_dashboard'))
-            elif user.role == 'teacher':
-                return redirect(url_for('teacher_dashboard'))
-            elif user.role == 'admin':
-                return redirect(url_for('admin_dashboard'))
-
-            flash("Role not recognized.")
-            return redirect(url_for('login'))
-
+            return redirect(next_page or url_for(f"{user.role}_dashboard"))
         flash("Invalid username or password")
         return redirect(url_for('login'))
-
     return render_template('login.html')
 
 @app.route('/logout')
@@ -114,26 +96,19 @@ def logout():
     flash("Logged out successfully.")
     return redirect(url_for('login'))
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
-
 @app.route('/dashboard_student')
 def student_dashboard():
-    if session.get('role') != 'student':
-        return redirect(url_for('login'))
+    if session.get('role') != 'student': return redirect(url_for('login'))
     return render_template('dashboard_student.html')
 
 @app.route('/dashboard_teacher')
 def teacher_dashboard():
-    if session.get('role') != 'teacher':
-        return redirect(url_for('login'))
+    if session.get('role') != 'teacher': return redirect(url_for('login'))
     return render_template('dashboard_teacher.html')
 
 @app.route('/dashboard_admin')
 def admin_dashboard():
-    if session.get('role') != 'admin':
-        return redirect(url_for('login'))
+    if session.get('role') != 'admin': return redirect(url_for('login'))
     return render_template('dashboard_admin.html')
 
 @app.route('/sessions')
@@ -182,14 +157,11 @@ def init_db():
 def join_session(session_id):
     if 'user_id' not in session:
         return redirect(url_for('login', next=request.path))
-
     existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
     if not existing:
         attendance = Attendance(user_id=session['user_id'], session_id=session_id)
         db.session.add(attendance)
         db.session.commit()
-
-    # Here pass 'room_name' and 'identity' to template for JavaScript
     return render_template('live_video_classroom.html',
                            room_name=str(session_id),
                            identity=str(session['user_id']))
@@ -199,7 +171,6 @@ def get_token():
     data = request.get_json()
     identity = data.get("identity")
     room = data.get("room")
-
     print("DEBUG - identity:", identity)
     print("DEBUG - room:", room)
     print("DEBUG - API_KEY:", API_KEY)
@@ -245,18 +216,15 @@ def upload_resources():
         video = request.files.get('video')
         notes = request.files.get('notes')
         send_zip = request.form.get('send_zip')
-
         saved_files = []
         if video and allowed_file(video.filename, ALLOWED_VIDEO):
             filename = secure_filename(video.filename)
             video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             saved_files.append(filename)
-
         if notes and allowed_file(notes.filename, ALLOWED_NOTES):
             filename = secure_filename(notes.filename)
             notes.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             saved_files.append(filename)
-
         if send_zip and saved_files:
             zip_path = os.path.join(app.config['UPLOAD_FOLDER'], 'resources.zip')
             with zipfile.ZipFile(zip_path, 'w') as zipf:
@@ -265,9 +233,7 @@ def upload_resources():
             flash('Files uploaded and zipped successfully.')
         else:
             flash('Files uploaded successfully.')
-
         return redirect(url_for('upload_resources'))
-
     return render_template('upload.html')
 
 @app.route('/resources')
@@ -287,11 +253,9 @@ def export_attendance():
     si = StringIO()
     cw = csv.writer(si)
     cw.writerow(['Username', 'Email', 'Class', 'Join Time', 'Leave Time'])
-
     attendances = Attendance.query.join(User).join(ClassSession).all()
     for a in attendances:
         cw.writerow([a.user.username, a.user.email, a.session.class_name, a.join_time, a.leave_time])
-
     output = si.getvalue()
     return Response(
         output,
