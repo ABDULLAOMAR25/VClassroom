@@ -169,46 +169,40 @@ def join_session(session_id):
 from jwt import encode as jwt_encode  # Ensure you're using PyJWT correctly
 
 @app.route('/get_token', methods=['POST'])
+@app.route('/get_token', methods=['POST'])
 def get_token():
     data = request.get_json()
-    identity = data.get("identity")
-    room = data.get("room")
-
-    print("DEBUG - identity:", identity)
-    print("DEBUG - room:", room)
-    print("DEBUG - API_KEY:", API_KEY)
-    print("DEBUG - API_SECRET:", API_SECRET)
-    print("DEBUG - LIVEKIT_URL:", LIVEKIT_URL)
+    identity = data.get("identity")    room = data.get("room")
 
     if not identity or not room:
         return jsonify({"error": "Missing identity or room"}), 400
     if not API_KEY or not API_SECRET or not LIVEKIT_URL:
-        return jsonify({"error": "Server misconfiguration - missing LiveKit credentials"}), 500
+        return jsonify({"error": "LiveKit config missing"}), 500
 
     now = int(time.time())
     payload = {
         "iss": API_KEY,
+        "sub": identity,
         "iat": now,
         "exp": now + 3600,
         "nbf": now,
         "video": True,
+        "audio": True,
         "grants": {
             "roomJoin": True,
             "room": room,
             "canPublish": True,
-            "canSubscribe": True,
-            "identity": identity  # ✅ Correct position: nested under "grants"
+            "canSubscribe": True
         }
     }
 
     try:
-        token = jwt_encode(payload, API_SECRET, algorithm="HS256")
-        if isinstance(token, bytes):  # PyJWT v1 returns bytes, v2 returns str
+        token = jwt.encode(payload, API_SECRET, algorithm="HS256")
+        if isinstance(token, bytes):
             token = token.decode('utf-8')
-        return jsonify({"token": token, "url": LIVEKIT_URL})
-    except Exception as e:
-        print("JWT Encode Error:", str(e))
+        return jsonify({"token": token})    except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/record')
 def record():
