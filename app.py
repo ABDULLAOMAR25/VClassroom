@@ -272,78 +272,6 @@ def manage_users():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        user_id = request.form.get('delete_user_id')
-        if user_id:
-            user = User.query.get(user_id)
-            if user:
-                db.session.delete(user)
-                db.session.commit()
-                flash(f"User '{user.username}' deleted successfully.")
-            else:
-                flash("User not found.")
-        return redirect(url_for('manage_users'))
-
-    role_filter = request.args.get('role')
-    if role_filter in ['admin', 'teacher', 'student']:
-        users = User.query.filter_by(role=role_filter).order_by(User.id).all()
-    else:
-        users = User.query.order_by(User.id).all()
-
-    return render_template('manage_users.html', users=users, role_filter=role_filter)
-
-@app.route('/add-default-users')
-def add_default_users():
-    messages = []
-
-    # Admin
-    if not User.query.filter_by(username="admin").first():
-        admin = User(
-            username="Abdulla",
-            email="mhatariabdulla@gmail.com",
-            password="admin123",
-            role="admin"
-        )
-        db.session.add(admin)
-        messages.append("✅ Admin user created.")
-    else:
-        messages.append("⚠️ Admin user already exists.")
-
-    # Teacher
-    if not User.query.filter_by(username="teacher1").first():
-        teacher = User(
-            username="Omar",
-            email="teacher1@example.com",
-            password="teacher123",
-            role="teacher"
-        )
-        db.session.add(teacher)
-        messages.append("✅ Teacher user created.")
-    else:
-        messages.append("⚠️ Teacher user already exists.")
-
-    # Student
-    if not User.query.filter_by(username="student1").first():
-        student = User(
-            username="student1",
-            email="student1@example.com",
-            password="student123",
-            role="student"
-        )
-        db.session.add(student)
-        messages.append("✅ Student user created.")
-    else:
-        messages.append("⚠️ Student user already exists.")
-
-    db.session.commit()
-    return "<br>".join(messages)
-@app.route('/admin/manage-users', methods=['GET', 'POST'])
-def manage_users():
-    if session.get('role') != 'admin':
-        flash("Access denied. Admins only.")
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        # --- Add User Logic ---
         if request.form.get('action') == 'add_user':
             username = request.form.get('username')
             email = request.form.get('email')
@@ -360,7 +288,6 @@ def manage_users():
                 db.session.commit()
                 flash(f"✅ New {role} user '{username}' added.")
 
-        # --- Delete User Logic ---
         elif request.form.get('delete_user_id'):
             user_id = request.form.get('delete_user_id')
             user = User.query.get(user_id)
@@ -373,7 +300,6 @@ def manage_users():
 
         return redirect(url_for('manage_users'))
 
-    # GET: Display users, optionally filtered by role
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
@@ -381,6 +307,34 @@ def manage_users():
         users = User.query.order_by(User.id).all()
 
     return render_template('manage_users.html', users=users, role_filter=role_filter)
+
+@app.route('/add-default-users')
+def add_default_users():
+    messages = []
+
+    if not User.query.filter_by(username="Abdulla").first():
+        admin = User(username="Abdulla", email="mhatariabdulla@gmail.com", password="admin123", role="admin")
+        db.session.add(admin)
+        messages.append("✅ Admin user created.")
+    else:
+        messages.append("⚠️ Admin user already exists.")
+
+    if not User.query.filter_by(username="Omar").first():
+        teacher = User(username="Omar", email="teacher1@example.com", password="teacher123", role="teacher")
+        db.session.add(teacher)
+        messages.append("✅ Teacher user created.")
+    else:
+        messages.append("⚠️ Teacher user already exists.")
+
+    if not User.query.filter_by(username="student1").first():
+        student = User(username="student1", email="student1@example.com", password="student123", role="student")
+        db.session.add(student)
+        messages.append("✅ Student user created.")
+    else:
+        messages.append("⚠️ Student user already exists.")
+
+    db.session.commit()
+    return "<br>".join(messages)
 
 if __name__ == '__main__':
     app.run(debug=True)
