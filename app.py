@@ -272,7 +272,7 @@ def manage_users():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        if request.form.get('action') == 'add_user'):
+        if request.form.get('action') == 'add_user':
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
