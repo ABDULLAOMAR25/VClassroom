@@ -267,52 +267,33 @@ def export_attendance():
         headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
     )
 
-@app.route('/add-default-users')
-def add_default_users():
-    messages = []
+@app.route('/admin/manage-users', methods=['GET', 'POST'])
+def manage_users():
+    if session.get('role') != 'admin':
+        flash("Access denied. Admins only.")
+        return redirect(url_for('login'))
 
-    # --- Add Admin ---
-    if not User.query.filter_by(username="admin").first():
-        admin = User(
-            username="admin",
-            email="admin@example.com",
-            password="admin123",
-            role="admin"
-        )
-        db.session.add(admin)
-        messages.append("✅ Admin created")
+    # Handle delete action
+    if request.method == 'POST':
+        user_id = request.form.get('delete_user_id')
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                db.session.delete(user)
+                db.session.commit()
+                flash(f"User '{user.username}' deleted successfully.")
+            else:
+                flash("User not found.")
+        return redirect(url_for('manage_users'))
+
+    # Filter users by role if query param set
+    role_filter = request.args.get('role')
+    if role_filter in ['admin', 'teacher', 'student']:
+        users = User.query.filter_by(role=role_filter).order_by(User.id).all()
     else:
-        messages.append("⚠️ Admin already exists")
+        users = User.query.order_by(User.id).all()
 
-    # --- Add Teacher ---
-    if not User.query.filter_by(username="teacher1").first():
-        teacher = User(
-            username="teacher1",
-            email="teacher1@example.com",
-            password="teacher123",
-            role="teacher"
-        )
-        db.session.add(teacher)
-        messages.append("✅ Teacher created")
-    else:
-        messages.append("⚠️ Teacher already exists")
-
-    # --- Add Student ---
-    if not User.query.filter_by(username="student1").first():
-        student = User(
-            username="student1",
-            email="student1@example.com",
-            password="student123",
-            role="student"
-        )
-        db.session.add(student)
-        messages.append("✅ Student created")
-    else:
-        messages.append("⚠️ Student already exists")
-
-    db.session.commit()
-
-    return "<br>".join(messages)
+    return render_template('manage_users.html', users=users, role_filter=role_filter)
 
 if __name__ == '__main__':
     app.run(debug=True)
