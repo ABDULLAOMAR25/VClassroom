@@ -343,39 +343,37 @@ def manage_users():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        action = request.form.get("action")
+        # --- Add User Logic ---
+        if request.form.get('action') == 'add_user':
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            role = request.form.get('role')
 
-        if action == "add_user":
-            username = request.form.get("new_username")
-            email = request.form.get("new_email")
-            password = request.form.get("new_password")
-            role = request.form.get("new_role")
-
-            # Check for existing user
-            existing_user = User.query.filter(
-                (User.username == username) | (User.email == email)
-            ).first()
-            if existing_user:
+            if not all([username, email, password, role]):
+                flash("⚠️ All fields are required to add a user.")
+            elif User.query.filter((User.username == username) | (User.email == email)).first():
                 flash("⚠️ Username or email already exists.")
             else:
                 new_user = User(username=username, email=email, password=password, role=role)
                 db.session.add(new_user)
                 db.session.commit()
-                flash(f"✅ New user '{username}' added successfully.")
+                flash(f"✅ New {role} user '{username}' added.")
 
+        # --- Delete User Logic ---
         elif request.form.get('delete_user_id'):
             user_id = request.form.get('delete_user_id')
             user = User.query.get(user_id)
             if user:
                 db.session.delete(user)
                 db.session.commit()
-                flash(f"🗑️ User '{user.username}' deleted.")
+                flash(f"🗑️ User '{user.username}' deleted successfully.")
             else:
                 flash("⚠️ User not found.")
 
         return redirect(url_for('manage_users'))
 
-    # Filtering by role
+    # GET: Display users, optionally filtered by role
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
