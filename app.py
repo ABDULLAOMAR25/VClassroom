@@ -267,5 +267,11 @@ def export_attendance():
         headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
     )
 
+@app.route('/clean-empty-sessions')
+def clean_empty_sessions():
+    ClassSession.query.filter((ClassSession.class_name == "") | (ClassSession.class_name == None)).delete()
+    db.session.commit()
+    return "✅ Empty class_name sessions deleted!"
+
 if __name__ == '__main__':
     app.run(debug=True)
