@@ -13,7 +13,7 @@ from sqlalchemy import text
 from pathlib import Path
 
 # --- Load environment variables ---
-load_dotenv(dotenv_path=Path('.') / '.env')  #  Explicitly load .env from current dir
+load_dotenv(dotenv_path=Path('.') / '.env')
 
 # --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -39,6 +39,11 @@ if db_url and db_url.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# --- Context processor ---
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow}
 
 # --- Models ---
 class ClassSession(db.Model):
@@ -165,19 +170,13 @@ def join_session(session_id):
     return render_template('live_video_classroom.html',
                            room_name=str(session_id),
                            identity=str(session['user_id']))
+
 @app.route('/get_token', methods=['POST'])
 def get_token():
     try:
         data = request.get_json()
         identity = data.get("identity")
         room = data.get("room")
-
-        print("NOW:", int(time.time()))
-        print("DEBUG - identity:", identity)
-        print("DEBUG - room:", room)
-        print("DEBUG - API_KEY:", API_KEY)
-        print("DEBUG - API_SECRET:", API_SECRET)
-        print("DEBUG - LIVEKIT_URL:", LIVEKIT_URL)
 
         if not identity or not room:
             return jsonify({"error": "Missing identity or room"}), 400
@@ -207,7 +206,6 @@ def get_token():
         return jsonify({"token": token, "url": LIVEKIT_URL})
 
     except Exception as e:
-        print("JWT Encode Error:", e)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/record')
@@ -273,7 +271,6 @@ def manage_users():
         flash("Access denied. Admins only.")
         return redirect(url_for('login'))
 
-    # Handle delete action
     if request.method == 'POST':
         user_id = request.form.get('delete_user_id')
         if user_id:
@@ -286,7 +283,6 @@ def manage_users():
                 flash("User not found.")
         return redirect(url_for('manage_users'))
 
-    # Filter users by role if query param set
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
@@ -294,6 +290,52 @@ def manage_users():
         users = User.query.order_by(User.id).all()
 
     return render_template('manage_users.html', users=users, role_filter=role_filter)
+
+@app.route('/add-default-users')
+def add_default_users():
+    messages = []
+
+    # Admin
+    if not User.query.filter_by(username="admin").first():
+        admin = User(
+            username="Abdulla",
+            email="mhatariabdulla@gmail.com",
+            password="admin123",
+            role="admin"
+        )
+        db.session.add(admin)
+        messages.append("✅ Admin user created.")
+    else:
+        messages.append("⚠️ Admin user already exists.")
+
+    # Teacher
+    if not User.query.filter_by(username="teacher1").first():
+        teacher = User(
+            username="Omar",
+            email="teacher1@example.com",
+            password="teacher123",
+            role="teacher"
+        )
+        db.session.add(teacher)
+        messages.append("✅ Teacher user created.")
+    else:
+        messages.append("⚠️ Teacher user already exists.")
+
+    # Student
+    if not User.query.filter_by(username="student1").first():
+        student = User(
+            username="student1",
+            email="student1@example.com",
+            password="student123",
+            role="student"
+        )
+        db.session.add(student)
+        messages.append("✅ Student user created.")
+    else:
+        messages.append("⚠️ Student user already exists.")
+
+    db.session.commit()
+    return "<br>".join(messages)
 
 if __name__ == '__main__':
     app.run(debug=True)
