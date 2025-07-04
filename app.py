@@ -267,11 +267,52 @@ def export_attendance():
         headers={'Content-Disposition': 'attachment;filename=attendance.csv'}
     )
 
-@app.route('/clean-empty-sessions')
-def clean_empty_sessions():
-    ClassSession.query.filter((ClassSession.class_name == "") | (ClassSession.class_name == None)).delete()
+@app.route('/add-default-users')
+def add_default_users():
+    messages = []
+
+    # --- Add Admin ---
+    if not User.query.filter_by(username="admin").first():
+        admin = User(
+            username="admin",
+            email="admin@example.com",
+            password="admin123",
+            role="admin"
+        )
+        db.session.add(admin)
+        messages.append("✅ Admin created")
+    else:
+        messages.append("⚠️ Admin already exists")
+
+    # --- Add Teacher ---
+    if not User.query.filter_by(username="teacher1").first():
+        teacher = User(
+            username="teacher1",
+            email="teacher1@example.com",
+            password="teacher123",
+            role="teacher"
+        )
+        db.session.add(teacher)
+        messages.append("✅ Teacher created")
+    else:
+        messages.append("⚠️ Teacher already exists")
+
+    # --- Add Student ---
+    if not User.query.filter_by(username="student1").first():
+        student = User(
+            username="student1",
+            email="student1@example.com",
+            password="student123",
+            role="student"
+        )
+        db.session.add(student)
+        messages.append("✅ Student created")
+    else:
+        messages.append("⚠️ Student already exists")
+
     db.session.commit()
-    return "✅ Empty class_name sessions deleted!"
+
+    return "<br>".join(messages)
 
 if __name__ == '__main__':
     app.run(debug=True)
