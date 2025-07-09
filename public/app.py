@@ -301,6 +301,7 @@ def manage_users():
                 flash("⚠️ User not found.")
             return redirect(url_for('manage_users'))
 
+    # Apply role filter (GET request) m
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
