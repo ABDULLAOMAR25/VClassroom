@@ -175,52 +175,30 @@ def join_session(session_id):
         identity=session['username']  # ✅ use username instead of ID
     )
 
-@app.route('/get_token', methods=['POST'])
+from livekit import AccessToken, VideoGrant
+
+@app.route("/get_token", methods=["POST"])
 def get_token():
-    try:
-        if 'user_id' not in session or 'username' not in session:
-            return jsonify({"error": "Unauthorized: Please log in first."}), 401
+    data = request.get_json()
+    identity = data.get("identity")
+    room = data.get("room")
 
-        data = request.get_json()
-        identity = data.get("identity")
-        room = data.get("room")
+    if not identity or not room:
+        return jsonify({"error": "Missing identity or room"}), 400
 
-        # ✅ Only allow token generation for the logged-in user
-        if identity != session['username']:
-            return jsonify({"error": "❌ Unauthorized identity access."}), 403
+    # Read environment variables
+    api_key = os.getenv("LIVEKIT_API_KEY")
+    api_secret = os.getenv("LIVEKIT_API_SECRET")
+    livekit_url = os.getenv("LIVEKIT_URL")
 
-        if not identity or not room:
-            return jsonify({"error": "❌ Missing identity or room"}), 400
+    # Grant permissions to the room
+    grant = VideoGrant(room=room, room_join=True, can_publish=True, can_subscribe=True)
 
-        if not API_KEY or not API_SECRET or not LIVEKIT_URL:
-            return jsonify({"error": "❌ LiveKit environment not set"}), 500
+    # Generate token
+    token = AccessToken(api_key, api_secret, identity=identity)
+    token.add_grant(grant)
 
-        now = int(time.time())
-
-        payload = {
-            "iss": API_KEY,
-            "sub": f"user:{identity}",
-            "iat": now,
-            "exp": now + 3600,
-            "nbf": now,
-            "grants": {
-                "identity": identity,
-                "roomJoin": True,
-                "room": room,
-                "canPublish": True,
-                "canSubscribe": True
-            }
-        }
-
-        token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-        if isinstance(token, bytes):
-            token = token.decode('utf-8')
-
-        return jsonify({"token": token, "url": LIVEKIT_URL})
-
-    except Exception as e:
-        print("❌ Error in /get_token:", e)
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"token": token.to_jwt(), "url": livekit_url})
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
