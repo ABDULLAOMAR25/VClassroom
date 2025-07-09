@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Teacher Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f4f6f9;
+            padding: 30px 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        nav {
+            background-color: #1abc9c;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            background-color: #16a085;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #149174;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 30px;
+            padding: 0;
+        }
+
+        ul li {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        ul li a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: bold;
+            display: block;
+        }
+
+        ul li a:hover {
+            color: #1abc9c;
+        }
+
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 15px 10px;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ccc;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 600px) {
+            nav {
+                justify-content: center;
+            }
+
+            nav a {
+                flex: 1 1 100%;
+                text-align: center;
+            }
+
+            ul li a {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>👩‍🏫 Welcome, Teacher!</h2>
+
+    <nav aria-label="Teacher navigation">
+        <a href="{{ url_for('record') }}">📹 Record Your Class</a>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </nav>
+
+    <main>
+        <ul>
+            <li><a href="{{ url_for('create_session') }}">➕ Create Session</a></li>
+            <li><a href="{{ url_for('sessions') }}">📋 Manage Sessions</a></li>
+            <li><a href="{{ url_for('upload_resources') }}">📚 Upload Materials</a></li>
+        </ul>
+    </main>
+
+    <footer>
+        &copy; 2025 Virtual Classroom | All Rights Reserved
+    </footer>
+</body>
+</html>

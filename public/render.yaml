@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: VClassroom
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_SECRET_KEY
+        value: ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
+
+      - key: LIVEKIT_API_KEY
+        value: APISvyjdbYaJSG4
+
+      - key: LIVEKIT_API_SECRET
+        value: yBvpF6ztS22hxOG6qaAuvfR9gA5HbC0BaamEHmjyFXM
+
+      - key: LIVEKIT_URL
+        value: wss://vclassroom-wwi9i8el.livekit.cloud
+
+      - key: LIVEKIT_EGRESS_URL
+        value: https://vclassroom-wwi9i8el.livekit.cloud/egress/start
+
+      - key: DATABASE_URL
+        value: postgresql://vclassroom_user:F4oJqnLnGzsVMOaceXAcRdYmd3Ay5JkK@dpg-d1egm8qdbo4c73eobkd0-a:5432/vclassroom

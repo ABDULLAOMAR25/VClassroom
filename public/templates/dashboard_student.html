@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        nav {
+            background-color: #1abc9c;
+            padding: 10px;
+            text-align: right;
+            border-radius: 5px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 8px 16px;
+            background-color: #16a085;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #149174;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+
+        ul li {
+            background-color: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        ul li a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 16px;
+            display: block;
+        }
+
+        ul li a:hover {
+            color: #1abc9c;
+        }
+    </style>
+</head>
+<body>
+    <h2>🎓 Welcome, Student!</h2>
+    <nav>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </nav>
+    <ul>
+        <li><a href="{{ url_for('sessions') }}">📅 View Sessions</a></li>
+        <li><a href="#">📥 Assignments</a></li>
+        <li><a href="#">📊 Progress</a></li>
+    </ul>
+</body>
+
+    <footer>
+        &copy; 2025 Virtual Classroom | All Rights Reserved
+    </footer>
+</body>
+</html>

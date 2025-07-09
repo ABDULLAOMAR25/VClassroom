@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>View Resources | Virtual Classroom</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  body {
+    background: #f4f6f9;
+    padding: 30px 20px;
+    min-height: 100vh;
+    display: flex; justify-content: center;
+  }
+  .container {
+    max-width: 900px;
+    width: 100%;
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #2c3e50;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+  }
+  th {
+    background-color: #1abc9c;
+    color: white;
+  }
+  tr:hover {
+    background-color: #f1f1f1;
+  }
+  a.download-link {
+    color: #1abc9c;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  a.download-link:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 600px) {
+    table, thead, tbody, tr, th, td {
+      display: block;
+      width: 100%;
+    }
+    tr {
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+    th {
+      display: none;
+    }
+    td {
+      padding-left: 50%;
+      position: relative;
+      text-align: left;
+    }
+    td::before {
+      position: absolute;
+      top: 12px;
+      left: 15px;
+      width: 45%;
+      white-space: nowrap;
+      font-weight: 600;
+      color: #34495e;
+    }
+    td:nth-of-type(1)::before { content: "File Name"; }
+    td:nth-of-type(2)::before { content: "Type"; }
+    td:nth-of-type(3)::before { content: "Download"; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Available Resources</h2>
+
+    {% if resources %}
+    <table>
+      <thead>
+        <tr>
+          <th>File Name</th>
+          <th>Type</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for res in resources %}
+        <tr>
+          <td>{{ res.filename }}</td>
+          <td>{{ res.filetype }}</td>
+          <td><a href="{{ url_for('download_resource', filename=res.filename) }}" class="download-link" download>Download</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="text-align:center;">No resources uploaded yet.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

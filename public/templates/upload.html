@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Upload Resources | Virtual Classroom</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  body {
+    background: #f4f6f9;
+    padding: 30px 20px;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: flex-start;
+  }
+  .container {
+    background: white;
+    max-width: 500px;
+    width: 100%;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+  }
+  form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #34495e;
+  }
+  input[type="file"], input[type="checkbox"] {
+    margin-bottom: 20px;
+  }
+  input[type="file"] {
+    width: 100%;
+  }
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 25px;
+  }
+  button {
+    width: 100%;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #16a085;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Resources</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_resources') }}">
+      <label for="video">Upload Video (mp4, mkv, avi):</label>
+      <input type="file" id="video" name="video" accept="video/*">
+
+      <label for="notes">Upload Notes (pdf, doc, ppt, txt):</label>
+      <input type="file" id="notes" name="notes" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="send_zip" name="send_zip">
+        <label for="send_zip">Send all as ZIP file</label>
+      </div>
+
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+</body>
+</html>

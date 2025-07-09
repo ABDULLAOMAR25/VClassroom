@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Virtual Classroom</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(120deg, #007bff, #00c6ff);
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 30px 20px;
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-card h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #007bff;
+    }
+
+    label {
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #005ecb;
+    }
+
+    .login-links {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .login-links a {
+      color: #007bff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .login-links a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px 10px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 20px 15px;
+      }
+
+      .login-links {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <div class="login-container">
+      <div class="login-card">
+        <h2>Virtual Classroom</h2>
+        <form method="POST" action="{{ url_for('login') }}">
+          <label for="username">Email or Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required>
+
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+          <label for="role">Role</label>
+          <select id="role" name="role" required>
+            <option value="" disabled selected>Select your role</option>
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <button type="submit">Login</button>
+
+          <div class="login-links">
+            <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+            <a href="#">Create Account</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Vertual Classroom | All Rights Reserved
+  </footer>
+</body>
+</html>
