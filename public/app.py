@@ -272,6 +272,7 @@ def manage_users():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
+        # ADD USER
         if request.form.get('action') == 'add_user':
             username = request.form.get('username')
             email = request.form.get('email')
@@ -287,9 +288,14 @@ def manage_users():
                 db.session.add(new_user)
                 db.session.commit()
                 flash(f"✅ New {role} user '{username}' added.")
+<<<<<<< HEAD:public/app.py
                 # Redirect to clear POST form and show all users
                 return redirect(url_for('manage_users'))
+=======
+            return redirect(url_for('manage_users'))  # <== Ensure this is here
+>>>>>>> 47ebf07 (lk):app.py
 
+        # DELETE USER
         elif request.form.get('delete_user_id'):
             user_id = request.form.get('delete_user_id')
             user = User.query.get(user_id)
@@ -299,9 +305,15 @@ def manage_users():
                 flash(f"🗑️ User '{user.username}' deleted successfully.")
             else:
                 flash("⚠️ User not found.")
+<<<<<<< HEAD:public/app.py
             return redirect(url_for('manage_users'))
 
     # Apply role filter (GET request) m
+=======
+            return redirect(url_for('manage_users'))  # <== Ensure this is here too
+
+    # GET request: show filtered or all users
+>>>>>>> 47ebf07 (lk):app.py
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
