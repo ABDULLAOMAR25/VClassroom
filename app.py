@@ -159,43 +159,44 @@ def init_db():
 
 @app.route('/join_session/<int:session_id>')
 def join_session(session_id):
-    if 'user_id' not in session:
+    if 'user_id' not in session or 'username' not in session:
         return redirect(url_for('login', next=request.path))
+
+    # Ensure attendance is recorded
     existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
     if not existing:
         attendance = Attendance(user_id=session['user_id'], session_id=session_id)
         db.session.add(attendance)
         db.session.commit()
-    return render_template('live_video_classroom.html',
-                           room_name=str(session_id),
-                           identity=str(session['user_id']))
+
+    return render_template(
+        'live_video_classroom.html',
+        room_name=str(session_id),
+        identity=session['username']  # ✅ use username instead of ID
+    )
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
     try:
-        # Ensure the user is logged in
-        if 'user_id' not in session:
+        if 'user_id' not in session or 'username' not in session:
             return jsonify({"error": "Unauthorized: Please log in first."}), 401
 
         data = request.get_json()
         identity = data.get("identity")
         room = data.get("room")
 
-        # Debug: log incoming values
-        print(f"🔑 Received token request for identity={identity}, room={room}")
+        # ✅ Only allow token generation for the logged-in user
+        if identity != session['username']:
+            return jsonify({"error": "❌ Unauthorized identity access."}), 403
 
-        # Validate inputs
         if not identity or not room:
             return jsonify({"error": "❌ Missing identity or room"}), 400
 
-        # Validate LiveKit credentials
         if not API_KEY or not API_SECRET or not LIVEKIT_URL:
-            print("❌ Missing LiveKit environment variables")
-            return jsonify({"error": "❌ Missing LiveKit credentials"}), 500
+            return jsonify({"error": "❌ LiveKit environment not set"}), 500
 
         now = int(time.time())
 
-        # Build token payload
         payload = {
             "iss": API_KEY,
             "sub": f"user:{identity}",
@@ -211,15 +212,10 @@ def get_token():
             }
         }
 
-        # Debug: Show payload before encoding
-        print(f"✅ Payload: {payload}")
-
-        # Encode token
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
         if isinstance(token, bytes):
             token = token.decode('utf-8')
 
-        # Return token and LiveKit server URL
         return jsonify({"token": token, "url": LIVEKIT_URL})
 
     except Exception as e:
