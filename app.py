@@ -168,21 +168,34 @@ def join_session(session_id):
         db.session.commit()
     return render_template('live_video_classroom.html',
                            room_name=str(session_id),
-                           identity=session.get('username', f"user_{session['user_id']}"))  # ✅ Uses session username
+                           identity=str(session['user_id']))
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
     try:
+        # Ensure the user is logged in
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized: Please log in first."}), 401
+
         data = request.get_json()
         identity = data.get("identity")
         room = data.get("room")
 
+        # Debug: log incoming values
+        print(f"🔑 Received token request for identity={identity}, room={room}")
+
+        # Validate inputs
         if not identity or not room:
-            return jsonify({"error": "Missing identity or room"}), 400
+            return jsonify({"error": "❌ Missing identity or room"}), 400
+
+        # Validate LiveKit credentials
         if not API_KEY or not API_SECRET or not LIVEKIT_URL:
-            return jsonify({"error": "Missing LiveKit credentials"}), 500
+            print("❌ Missing LiveKit environment variables")
+            return jsonify({"error": "❌ Missing LiveKit credentials"}), 500
 
         now = int(time.time())
+
+        # Build token payload
         payload = {
             "iss": API_KEY,
             "sub": f"user:{identity}",
@@ -198,13 +211,19 @@ def get_token():
             }
         }
 
+        # Debug: Show payload before encoding
+        print(f"✅ Payload: {payload}")
+
+        # Encode token
         token = jwt.encode(payload, API_SECRET, algorithm="HS256")
         if isinstance(token, bytes):
             token = token.decode('utf-8')
 
+        # Return token and LiveKit server URL
         return jsonify({"token": token, "url": LIVEKIT_URL})
 
     except Exception as e:
+        print("❌ Error in /get_token:", e)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/upload', methods=['GET', 'POST'])
