@@ -1,0 +1,19 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  text-align: center;
+}
+
+#video-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+video {
+  width: 300px;
+  margin: 10px;
+  border-radius: 10px;
+  background: black;
+}
