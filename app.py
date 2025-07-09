@@ -17,13 +17,12 @@ load_dotenv(dotenv_path=Path('.') / '.env')
 
 # --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
+app.secret_key = "your_generated_secret_key_here"  # 🔐 Replace with your actual key
 
 # --- LiveKit Config ---
 API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
-LIVEKIT_EGRESS_URL = os.getenv("LIVEKIT_EGRESS_URL")
 
 # --- File upload configuration ---
 UPLOAD_FOLDER = 'uploads'
@@ -40,7 +39,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- Context processor ---
 @app.context_processor
 def inject_now():
     return {'now': datetime.utcnow}
@@ -70,7 +68,7 @@ class Attendance(db.Model):
     user = db.relationship('User', backref='attendances')
     session = db.relationship('ClassSession', backref='attendances')
 
-# --- Helper Function ---
+# --- Helper ---
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
@@ -89,6 +87,7 @@ def login():
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
+            session['username'] = user.username  # 💡 Ensure identity is kept
             flash(f"Logged in successfully as {user.role.capitalize()}")
             return redirect(next_page or url_for(f"{user.role}_dashboard"))
         flash("Invalid username or password")
@@ -169,7 +168,7 @@ def join_session(session_id):
         db.session.commit()
     return render_template('live_video_classroom.html',
                            room_name=str(session_id),
-                           identity=str(session['user_id']))
+                           identity=session.get('username', f"user_{session['user_id']}"))  # ✅ Uses session username
 
 @app.route('/get_token', methods=['POST'])
 def get_token():
@@ -207,10 +206,6 @@ def get_token():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route('/record')
-def record():
-    return render_template('record.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
@@ -272,13 +267,11 @@ def manage_users():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # ADD USER
         if request.form.get('action') == 'add_user':
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
             role = request.form.get('role')
-
             if not all([username, email, password, role]):
                 flash("⚠️ All fields are required to add a user.")
             elif User.query.filter((User.username == username) | (User.email == email)).first():
@@ -288,13 +281,8 @@ def manage_users():
                 db.session.add(new_user)
                 db.session.commit()
                 flash(f"✅ New {role} user '{username}' added.")
-
-                # Redirect to clear POST form and show all users
                 return redirect(url_for('manage_users'))
 
-            return redirect(url_for('manage_users'))  
-
-        # DELETE USER
         elif request.form.get('delete_user_id'):
             user_id = request.form.get('delete_user_id')
             user = User.query.get(user_id)
@@ -304,9 +292,8 @@ def manage_users():
                 flash(f"🗑️ User '{user.username}' deleted successfully.")
             else:
                 flash("⚠️ User not found.")
-            return redirect(url_for('manage_users'))
+        return redirect(url_for('manage_users'))
 
-    # GET request: show filtered or all users
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()
@@ -318,28 +305,24 @@ def manage_users():
 @app.route('/add-default-users')
 def add_default_users():
     messages = []
-
     if not User.query.filter_by(username="Abdulla").first():
         admin = User(username="Abdulla", email="mhatariabdulla@gmail.com", password="admin123", role="admin")
         db.session.add(admin)
         messages.append("✅ Admin user created.")
     else:
         messages.append("⚠️ Admin user already exists.")
-
     if not User.query.filter_by(username="Omar").first():
         teacher = User(username="Omar", email="teacher1@example.com", password="teacher123", role="teacher")
         db.session.add(teacher)
         messages.append("✅ Teacher user created.")
     else:
         messages.append("⚠️ Teacher user already exists.")
-
     if not User.query.filter_by(username="student1").first():
         student = User(username="student1", email="student1@example.com", password="student123", role="student")
         db.session.add(student)
         messages.append("✅ Student user created.")
     else:
         messages.append("⚠️ Student user already exists.")
-
     db.session.commit()
     return "<br>".join(messages)
 
