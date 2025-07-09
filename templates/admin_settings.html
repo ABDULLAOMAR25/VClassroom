@@ -1,0 +1,122 @@
+<!-- templates/admin_settings.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Settings</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    form {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 12px 0 4px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .toggle-group {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toggle-group input {
+      transform: scale(1.2);
+    }
+
+    .env {
+      background: #f9f9f9;
+      padding: 10px;
+      border: 1px dashed #ccc;
+      margin-top: 20px;
+      font-family: monospace;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #0984e3;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #74b9ff;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>⚙️ Admin Settings</h2>
+
+  <form method="POST">
+    <label>Change Password:</label>
+    <input type="password" name="new_password" placeholder="Enter new password" />
+
+    <div class="toggle-group">
+      <input type="checkbox" name="enable_recording" {{ 'checked' if settings.get('recording') else '' }} />
+      <label for="enable_recording">Enable Recording</label>
+    </div>
+
+    <div class="toggle-group">
+      <input type="checkbox" name="enable_chat" {{ 'checked' if settings.get('chat') else '' }} />
+      <label for="enable_chat">Enable Chat</label>
+    </div>
+
+    <div class="toggle-group">
+      <input type="checkbox" name="enable_uploads" {{ 'checked' if settings.get('uploads') else '' }} />
+      <label for="enable_uploads">Enable Uploads</label>
+    </div>
+
+    <label>Max Upload Size (MB):</label>
+    <input type="number" name="upload_limit" value="{{ settings.get('upload_limit', 50) }}" min="1" />
+
+    <label>Allowed File Types:</label>
+    <input type="text" name="allowed_types" value="{{ settings.get('allowed_types', 'mp4, pdf, docx') }}" />
+
+    <div class="env">
+      <p><strong>LiveKit URL:</strong> {{ livekit_url }}</p>
+      <p><strong>LiveKit API Key:</strong> {{ livekit_key[:6] + '****' }}</p>
+    </div>
+
+    <button type="submit">💾 Save Settings</button>
+  </form>
+</body>
+</html>

@@ -345,5 +345,42 @@ def add_default_users():
     db.session.commit()
     return "<br>".join(messages)
 
+@app.route('/admin/settings', methods=['GET', 'POST'])
+def admin_settings():
+    if session.get('role') != 'admin':
+        flash("Access denied.")
+        return redirect(url_for('login'))
+
+    # Dummy settings (in production, store these in DB or config file)
+    settings = {
+        'recording': True,
+        'chat': True,
+        'uploads': True,
+        'upload_limit': 50,
+        'allowed_types': 'mp4, pdf, docx'
+    }
+
+    if request.method == 'POST':
+        new_pass = request.form.get('new_password')
+        if new_pass:
+            user = User.query.get(session['user_id'])
+            user.password = new_pass
+            db.session.commit()
+            flash("✅ Password updated.")
+
+        # Feature toggles
+        settings['recording'] = 'enable_recording' in request.form
+        settings['chat'] = 'enable_chat' in request.form
+        settings['uploads'] = 'enable_uploads' in request.form
+        settings['upload_limit'] = int(request.form.get('upload_limit') or 50)
+        settings['allowed_types'] = request.form.get('allowed_types') or 'mp4, pdf, docx'
+
+        flash("✅ Settings saved (but not persisted — update logic needed).")
+
+    return render_template('admin_settings.html',
+                           settings=settings,
+                           livekit_url=LIVEKIT_URL,
+                           livekit_key=API_KEY)
+
 if __name__ == '__main__':
     app.run(debug=True)
