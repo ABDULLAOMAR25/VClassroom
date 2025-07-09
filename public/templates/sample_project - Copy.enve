@@ -1,5 +1,0 @@
-LIVEKIT_URL=wss://live-classroom-0z8a7yns.livekit.cloud
-LIVEKIT_API_KEY=APIdraX8Mg4GjYd
-LIVEKIT_API_SECRET=your_actual_secret_here
-'sqlite:///classes.db'
-#DATABASE_URL=postgresql://liveclassroom_db_user:4LlknNrJn7DU6EHfwtg7sAugWROGLCVJ@dpg-d0nem3idbo4c73c3ldf0-a/liveclassroom_db

@@ -1,8 +1,0 @@
-FLASK_SECRET_KEY=ab780157f833e6a428050fe26ff675fde512fdf40abb6bd7b21ccace08238751
-
-LIVEKIT_API_KEY=APISvyjdbYaJSG4
-LIVEKIT_API_SECRET=yBvpF6ztS22hxOG6qaAuvfR9gA5HbC0BaamEHmjyFXM
-LIVEKIT_URL=wss://vclassroom-wwi9i8el.livekit.cloud
-LIVEKIT_EGRESS_URL=https://vclassroom-wwi9i8el.livekit.cloud/egress/start
-
-DATABASE_URL=postgresql://vclassroom_user:F4oJqnLnGzsVMOaceXAcRdYmd3Ay5Jk@dpg-d1egm8qdbo4c73eobkd0-a:5432/vclassroom
