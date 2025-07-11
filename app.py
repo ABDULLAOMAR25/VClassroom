@@ -58,7 +58,7 @@ db = SQLAlchemy(app)
 
 @app.context_processor
 def inject_now():
-    return {'now': datetime.utcnow}
+    return {'now': datetime.utcnow()}
 
 # --- Models ---
 class User(db.Model):
@@ -76,6 +76,7 @@ class ClassSession(db.Model):
     end_time = db.Column(db.DateTime)
     topic = db.Column(db.String(200))
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_live = db.Column(db.Boolean, default=False)
 
     @property
     def status(self):
@@ -199,7 +200,6 @@ def join_session(session_id):
     if 'user_id' not in session or 'username' not in session:
         return redirect(url_for('login', next=request.path))
 
-    # Ensure attendance is recorded
     existing = Attendance.query.filter_by(user_id=session['user_id'], session_id=session_id).first()
     if not existing:
         attendance = Attendance(user_id=session['user_id'], session_id=session_id)
@@ -209,7 +209,7 @@ def join_session(session_id):
     return render_template(
         'live_video_classroom.html',
         room_name=str(session_id),
-        identity=session['username']  # ✅ use username instead of ID
+        identity=session['username']
     )
 
 @app.route('/get_token', methods=['POST'])
@@ -222,18 +222,14 @@ def get_token():
         identity = data.get("identity")
         room = data.get("room")
 
-        # ✅ Only allow token generation for the logged-in user
         if identity != session['username']:
             return jsonify({"error": "❌ Unauthorized identity access."}), 403
-
         if not identity or not room:
             return jsonify({"error": "❌ Missing identity or room"}), 400
-
         if not API_KEY or not API_SECRET or not LIVEKIT_URL:
             return jsonify({"error": "❌ LiveKit environment not set"}), 500
 
         now = int(time.time())
-
         payload = {
             "iss": API_KEY,
             "sub": f"user:{identity}",
@@ -304,7 +300,7 @@ def export_attendance():
     cw.writerow(['Username', 'Email', 'Class', 'Join Time', 'Leave Time'])
     attendances = Attendance.query.join(User).join(ClassSession).all()
     for a in attendances:
-        cw.writerow([a.user.username, a.user.email, a.session.class_name, a.join_time, a.leave_time])
+        cw.writerow([a.user.username, a.user.email, a.session.topic, a.join_time, a.leave_time])
     output = si.getvalue()
     return Response(
         output,
@@ -384,7 +380,6 @@ def admin_settings():
         flash("Access denied.")
         return redirect(url_for('login'))
 
-    # Dummy settings (in production, store these in DB or config file)
     settings = {
         'recording': True,
         'chat': True,
@@ -401,7 +396,6 @@ def admin_settings():
             db.session.commit()
             flash("✅ Password updated.")
 
-        # Feature toggles
         settings['recording'] = 'enable_recording' in request.form
         settings['chat'] = 'enable_chat' in request.form
         settings['uploads'] = 'enable_uploads' in request.form
@@ -417,7 +411,7 @@ def admin_settings():
 
 @app.route('/record')
 def record():
-    return render_template('record.html')  # or some logic to start recording
+    return render_template('record.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
