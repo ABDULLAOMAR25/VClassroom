@@ -77,15 +77,17 @@ class ClassSession(db.Model):
     topic = db.Column(db.String(200))
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-@property
-def status(self):
-    now = datetime.utcnow()
-    if not self.start_time or self.start_time > now:
-        return 'Not Started'
-    elif self.end_time and now >= self.end_time:
-        return 'Ended'
-    else:
-        return 'Live'
+    @property
+    def status(self):
+        now = datetime.utcnow()
+        if not self.start_time:
+            return 'Not Started'
+        elif self.start_time > now:
+            return 'Not Started'
+        elif self.end_time and self.end_time <= now:
+            return 'Ended'
+        else:
+            return 'Live'
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -157,15 +159,8 @@ def sessions():
 def create_session():
     if request.method == 'POST':
         try:
-            topic = request.form['topic']
-            start_time = datetime.strptime(request.form['start_time'], '%Y-%m-%dT%H:%M')
-            end_time = datetime.strptime(request.form['end_time'], '%Y-%m-%dT%H:%M')
-            teacher_username = request.form['teacher_username']
-            teacher = User.query.filter_by(username=teacher_username, role='teacher').first()
-            if not teacher:
-                flash("Selected teacher does not exist.", "danger")
-                return redirect(url_for('create_session'))
-            new_session = ClassSession(topic=topic, start_time=start_time, end_time=end_time, teacher_id=teacher.id)
+            class_name = request.form['class_name']
+            new_session = ClassSession(topic=class_name, start_time=None, end_time=None, teacher_id=session.get('user_id'))
             db.session.add(new_session)
             db.session.commit()
             flash('Class session created successfully!', 'success')
@@ -174,8 +169,7 @@ def create_session():
             app.logger.exception("Failed to create session")
             flash("Something went wrong while creating session.", "danger")
             return redirect(url_for('create_session'))
-    teachers = User.query.filter_by(role='teacher').all()
-    return render_template('create_session.html', teachers=teachers)
+    return render_template('create_session.html')
 
 @app.route('/start-session/<int:session_id>')
 def start_session(session_id):
