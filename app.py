@@ -11,6 +11,9 @@ from io import StringIO
 from werkzeug.utils import secure_filename
 from sqlalchemy import text
 from pathlib import Path
+import logging
+from logging.handlers import RotatingFileHandler
+import sys
 
 # --- Load environment variables ---
 load_dotenv(dotenv_path=Path('.') / '.env')
@@ -18,6 +21,23 @@ load_dotenv(dotenv_path=Path('.') / '.env')
 # --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = "your_generated_secret_key_here"  # 🔐 Replace with your actual key
+
+# --- Logging Setup ---
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+
+log_formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=100000, backupCount=3)
+file_handler.setFormatter(log_formatter)
+file_handler.setLevel(logging.INFO)
+
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setFormatter(log_formatter)
+stream_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.addHandler(stream_handler)
+app.logger.setLevel(logging.INFO)
 
 # --- LiveKit Config ---
 API_KEY = os.getenv("LIVEKIT_API_KEY")
@@ -44,7 +64,6 @@ def inject_now():
     return {'now': datetime.utcnow}
 
 # --- Models ---
-# --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -52,7 +71,6 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     reset_code = db.Column(db.String(100), nullable=True)
-
     sessions = db.relationship('ClassSession', backref='teacher', lazy=True)
 
 class ClassSession(db.Model):
@@ -90,7 +108,7 @@ def login():
         if user:
             session['user_id'] = user.id
             session['role'] = user.role
-            session['username'] = user.username  # 💡 Ensure identity is kept
+            session['username'] = user.username
             flash(f"Logged in successfully as {user.role.capitalize()}")
             return redirect(next_page or url_for(f"{user.role}_dashboard"))
         flash("Invalid username or password")
@@ -120,39 +138,38 @@ def admin_dashboard():
 
 @app.route('/sessions')
 def sessions():
-    db.session.execute(text("UPDATE class_session SET start_time = NULL WHERE start_time = ''"))
-    db.session.execute(text("UPDATE class_session SET end_time = NULL WHERE end_time = ''"))
-    db.session.commit()
-    all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
-    return render_template('sessions.html', sessions=all_sessions)
+    try:
+        all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
+        return render_template('sessions.html', sessions=all_sessions)
+    except Exception as e:
+        app.logger.exception("Error loading sessions")
+        flash("Failed to load sessions.", "danger")
+        return redirect(url_for('index'))
 
 @app.route('/create_session', methods=['GET', 'POST'])
 def create_session():
     if request.method == 'POST':
-        topic = request.form['topic']
-        start_time = datetime.strptime(request.form['start_time'], '%Y-%m-%dT%H:%M')
-        end_time = datetime.strptime(request.form['end_time'], '%Y-%m-%dT%H:%M')
-        teacher_username = request.form['teacher_username']
+        try:
+            topic = request.form['topic']
+            start_time = datetime.strptime(request.form['start_time'], '%Y-%m-%dT%H:%M')
+            end_time = datetime.strptime(request.form['end_time'], '%Y-%m-%dT%H:%M')
+            teacher_username = request.form['teacher_username']
 
-        # Find teacher by username
-        teacher = User.query.filter_by(username=teacher_username, role='teacher').first()
-        if not teacher:
-            flash("Selected teacher does not exist.", "danger")
+            teacher = User.query.filter_by(username=teacher_username, role='teacher').first()
+            if not teacher:
+                flash("Selected teacher does not exist.", "danger")
+                return redirect(url_for('create_session'))
+
+            new_session = ClassSession(topic=topic, start_time=start_time, end_time=end_time, teacher_id=teacher.id)
+            db.session.add(new_session)
+            db.session.commit()
+            flash('Class session created successfully!', 'success')
+            return redirect(url_for('sessions'))
+        except Exception as e:
+            app.logger.exception("Failed to create session")
+            flash("Something went wrong while creating session.", "danger")
             return redirect(url_for('create_session'))
 
-        new_session = ClassSession(
-            topic=topic,
-            start_time=start_time,
-            end_time=end_time,
-            teacher_id=teacher.id
-        )
-
-        db.session.add(new_session)
-        db.session.commit()
-        flash('Class session created successfully!', 'success')
-        return redirect(url_for('sessions'))
-
-    # GET request
     teachers = User.query.filter_by(role='teacher').all()
     return render_template('create_session.html', teachers=teachers)
 
