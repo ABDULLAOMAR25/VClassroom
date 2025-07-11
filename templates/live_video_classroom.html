@@ -144,104 +144,106 @@
     </div>
   </div>
 
-  <script>
-    const roomName = "{{ room_name }}";
-    const identity = "{{ identity }}";
-    let room;
-    let localTracks = [];
-    let micEnabled = true;
+  <!-- inside <script> -->
+<script>
+  // Injected from Flask template rendering
+  const roomName = "{{ room_name|e }}";
+  const identity = "{{ identity|e }}"; // escape to prevent JS injection
 
-    async function connectToRoom() {
-      try {
-        const res = await fetch("/get_token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room: roomName, identity: identity })
-        });
+  console.log("🧠 Loaded identity:", identity); // debug
 
-        if (!res.ok) throw new Error("Failed to get token");
+  let room;
+  let localTracks = [];
+  let micEnabled = true;
 
-        const { token, url } = await res.json();
-        if (!token || !url) throw new Error("Token or URL missing");
+  async function connectToRoom() {
+    try {
+      // Send user identity exactly as Flask passed it
+      const res = await fetch("/get_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room: roomName, identity: identity })
+      });
 
-        room = new LivekitClient.Room();
-
-        room.on("trackSubscribed", (track, publication, participant) => {
-          if (track.kind === "video") {
-            const remoteVideo = document.getElementById("remote-video");
-            remoteVideo.srcObject = new MediaStream([track.mediaStreamTrack]);
-          }
-        });
-
-        room.on("participantConnected", participant => {
-          const li = document.createElement("li");
-          li.id = participant.sid;
-          li.textContent = participant.identity;
-          document.getElementById("participant-list").appendChild(li);
-        });
-
-        room.on("participantDisconnected", participant => {
-          const li = document.getElementById(participant.sid);
-          if (li) li.remove();
-        });
-
-        room.on("disconnected", () => {
-          console.log("Room disconnected");
-        });
-
-        await room.connect(url, token);
-        alert("✅ Connected to LiveKit room as " + identity);
-      } catch (err) {
-        alert("❌ Error: " + err.message);
-        console.error(err);
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to get token");
       }
-    }
 
-    async function startCamera() {
-      if (!room) return alert("Not connected to room");
-      localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
+      const { token, url } = result;
 
-      for (const track of localTracks) {
-        await room.localParticipant.publishTrack(track);
+      room = new LivekitClient.Room();
+
+      room.on("trackSubscribed", (track, publication, participant) => {
         if (track.kind === "video") {
-          document.getElementById("local-video").srcObject = new MediaStream([track.mediaStreamTrack]);
+          const remoteVideo = document.getElementById("remote-video");
+          remoteVideo.srcObject = new MediaStream([track.mediaStreamTrack]);
         }
+      });
+
+      room.on("participantConnected", participant => {
+        const li = document.createElement("li");
+        li.id = participant.sid;
+        li.textContent = participant.identity;
+        document.getElementById("participant-list").appendChild(li);
+      });
+
+      room.on("participantDisconnected", participant => {
+        const li = document.getElementById(participant.sid);
+        if (li) li.remove();
+      });
+
+      await room.connect(url, token);
+      alert("✅ Connected as " + identity);
+    } catch (err) {
+      alert("❌ Failed to connect: " + err.message);
+      console.error("LiveKit error:", err);
+    }
+  }
+
+  async function startCamera() {
+    if (!room) return alert("Not connected yet");
+    localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
+
+    for (const track of localTracks) {
+      await room.localParticipant.publishTrack(track);
+      if (track.kind === "video") {
+        document.getElementById("local-video").srcObject = new MediaStream([track.mediaStreamTrack]);
       }
     }
+  }
 
-    function toggleMic() {
-      const audioTrack = localTracks.find(t => t.kind === "audio");
-      if (!audioTrack) return;
-      micEnabled = !micEnabled;
-      micEnabled ? audioTrack.enable() : audioTrack.disable();
-      document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
-    }
+  function toggleMic() {
+    const audioTrack = localTracks.find(t => t.kind === "audio");
+    if (!audioTrack) return;
+    micEnabled = !micEnabled;
+    micEnabled ? audioTrack.enable() : audioTrack.disable();
+    document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
+  }
 
-    function raiseHand() {
-      const div = document.createElement("div");
-      div.textContent = `${identity} ✋ raised hand`;
-      const msgBox = document.getElementById("messages");
-      msgBox.appendChild(div);
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
+  function raiseHand() {
+    const div = document.createElement("div");
+    div.textContent = `${identity} ✋ raised hand`;
+    const msgBox = document.getElementById("messages");
+    msgBox.appendChild(div);
+    msgBox.scrollTop = msgBox.scrollHeight;
+  }
 
-    function sendMessage() {
-      const input = document.getElementById("messageBox");
-      if (!input.value.trim()) return;
-      const div = document.createElement("div");
-      div.textContent = `${identity}: ${input.value}`;
-      const msgBox = document.getElementById("messages");
-      msgBox.appendChild(div);
-      input.value = "";
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
+  function sendMessage() {
+    const input = document.getElementById("messageBox");
+    if (!input.value.trim()) return;
+    const div = document.createElement("div");
+    div.textContent = `${identity}: ${input.value}`;
+    const msgBox = document.getElementById("messages");
+    msgBox.appendChild(div);
+    input.value = "";
+    msgBox.scrollTop = msgBox.scrollHeight;
+  }
 
-    document.getElementById("btnCamera").onclick = startCamera;
-    document.getElementById("btnMic").onclick = toggleMic;
-    document.getElementById("btnRaiseHand").onclick = raiseHand;
-    document.getElementById("btnSend").onclick = sendMessage;
+  document.getElementById("btnCamera").onclick = startCamera;
+  document.getElementById("btnMic").onclick = toggleMic;
+  document.getElementById("btnRaiseHand").onclick = raiseHand;
+  document.getElementById("btnSend").onclick = sendMessage;
 
-    connectToRoom();
-  </script>
-</body>
-</html>
+  connectToRoom();
+</script>
