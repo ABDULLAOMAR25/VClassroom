@@ -222,22 +222,23 @@ def get_token():
         identity = data.get("identity")
         room = data.get("room")
 
-        if identity != session['username']:
-            return jsonify({"error": "❌ Unauthorized identity access."}), 403
         if not identity or not room:
             return jsonify({"error": "❌ Missing identity or room"}), 400
+
+        if identity != session['username']:
+            return jsonify({"error": "❌ Unauthorized identity access."}), 403
+
         if not API_KEY or not API_SECRET or not LIVEKIT_URL:
             return jsonify({"error": "❌ LiveKit environment not set"}), 500
 
         now = int(time.time())
         payload = {
             "iss": API_KEY,
-            "sub": f"user:{identity}",
+            "sub": identity,
             "iat": now,
             "exp": now + 3600,
             "nbf": now,
             "grants": {
-                "identity": identity,
                 "roomJoin": True,
                 "room": room,
                 "canPublish": True,
