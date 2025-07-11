@@ -150,7 +150,7 @@ def create_session():
         db.session.add(new_session)
         db.session.commit()
         flash('Class session created successfully!', 'success')
-        return redirect(url_for('all_sessions'))
+        return redirect(url_for('sessions'))
 
     # GET request
     teachers = User.query.filter_by(role='teacher').all()
