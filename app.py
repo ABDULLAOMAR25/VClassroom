@@ -378,5 +378,9 @@ def admin_settings():
                            livekit_url=LIVEKIT_URL,
                            livekit_key=API_KEY)
 
+@app.route('/record')
+def record():
+    return render_template('record.html')  # or some logic to start recording
+
 if __name__ == '__main__':
     app.run(debug=True)
