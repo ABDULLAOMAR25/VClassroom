@@ -20,21 +20,18 @@ load_dotenv(dotenv_path=Path('.') / '.env')
 
 # --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.secret_key = "your_generated_secret_key_here"  # 🔐 Replace with your actual key
+app.secret_key = "your_generated_secret_key_here"
 
 # --- Logging Setup ---
 if not os.path.exists('logs'):
     os.mkdir('logs')
-
 log_formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 file_handler = RotatingFileHandler('logs/app.log', maxBytes=100000, backupCount=3)
 file_handler.setFormatter(log_formatter)
 file_handler.setLevel(logging.INFO)
-
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 stream_handler.setLevel(logging.INFO)
-
 app.logger.addHandler(file_handler)
 app.logger.addHandler(stream_handler)
 app.logger.setLevel(logging.INFO)
@@ -44,14 +41,14 @@ API_KEY = os.getenv("LIVEKIT_API_KEY")
 API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 LIVEKIT_URL = os.getenv("LIVEKIT_URL")
 
-# --- File upload configuration ---
+# --- File Upload Config ---
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_VIDEO = {'mp4', 'mkv', 'avi'}
 ALLOWED_NOTES = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'}
 
-# --- Database Configuration ---
+# --- Database Config ---
 db_url = os.getenv('DATABASE_URL')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -79,6 +76,18 @@ class ClassSession(db.Model):
     end_time = db.Column(db.DateTime)
     topic = db.Column(db.String(200))
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    @property
+    def status(self):
+        now = datetime.utcnow()
+        if not self.start_time:
+            return 'Not Started'
+        elif self.start_time > now:
+            return 'Not Started'
+        elif self.end_time and self.end_time <= now:
+            return 'Ended'
+        else:
+            return 'Live'
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -154,12 +163,10 @@ def create_session():
             start_time = datetime.strptime(request.form['start_time'], '%Y-%m-%dT%H:%M')
             end_time = datetime.strptime(request.form['end_time'], '%Y-%m-%dT%H:%M')
             teacher_username = request.form['teacher_username']
-
             teacher = User.query.filter_by(username=teacher_username, role='teacher').first()
             if not teacher:
                 flash("Selected teacher does not exist.", "danger")
                 return redirect(url_for('create_session'))
-
             new_session = ClassSession(topic=topic, start_time=start_time, end_time=end_time, teacher_id=teacher.id)
             db.session.add(new_session)
             db.session.commit()
@@ -169,7 +176,6 @@ def create_session():
             app.logger.exception("Failed to create session")
             flash("Something went wrong while creating session.", "danger")
             return redirect(url_for('create_session'))
-
     teachers = User.query.filter_by(role='teacher').all()
     return render_template('create_session.html', teachers=teachers)
 
