@@ -77,17 +77,15 @@ class ClassSession(db.Model):
     topic = db.Column(db.String(200))
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    @property
-    def status(self):
-        now = datetime.utcnow()
-        if not self.start_time:
-            return 'Not Started'
-        elif self.start_time > now:
-            return 'Not Started'
-        elif self.end_time and self.end_time <= now:
-            return 'Ended'
-        else:
-            return 'Live'
+@property
+def status(self):
+    now = datetime.utcnow()
+    if not self.start_time or self.start_time > now:
+        return 'Not Started'
+    elif self.end_time and now >= self.end_time:
+        return 'Ended'
+    else:
+        return 'Live'
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
