@@ -1,130 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Create New Session</title>
+    <meta charset="UTF-8">
+    <title>Create Class Session</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
         body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-color: #f4f6f9;
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background-color: #f0f2f5;
         }
 
-        .main {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .form-container {
-            background-color: white;
-            padding: 30px 25px;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
+        h2 {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 25px;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        form {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         label {
             display: block;
-            margin-bottom: 6px;
-            color: #34495e;
-            font-weight: 600;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        input[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            background-color: #1abc9c;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            margin-bottom: 0.5rem;
             font-weight: bold;
+            color: #444;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"],
+        select {
+            width: 100%;
+            padding: 0.6rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.7rem 1.2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.3s;
+            width: 100%;
         }
 
-        input[type="submit"]:hover {
-            background-color: #16a085;
+        button:hover {
+            background-color: #0056b3;
         }
 
-        a {
-            display: block;
+        .message {
             text-align: center;
-            margin-top: 20px;
-            color: #1abc9c;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        footer {
-            text-align: center;
-            padding: 15px 10px;
-            background-color: #ecf0f1;
-            color: #7f8c8d;
-            font-size: 14px;
-            border-top: 1px solid #ccc;
-        }
-
-        /* Responsive adjustment (mostly already responsive, but this ensures good spacing) */
-        @media (max-width: 480px) {
-            .form-container {
-                padding: 20px;
-            }
-
-            input[type="submit"] {
-                font-size: 14px;
-                padding: 10px;
-            }
+            color: green;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="main">
-        <div class="form-container">
-            <h1>Create a New Class Session</h1>
-            <form method="POST">
-                <label for="class_name">Class Name:</label>
-                <input type="text" id="class_name" name="class_name" required>
-                <input type="submit" value="Create">
-            </form>
-            <a href="{{ url_for('sessions') }}">← Back to Sessions</a>
-        </div>
-    </div>
 
-    <footer>
-        &copy; 2025 Vertual Classroom | All Rights Reserved
-    </footer>
+    <h2>Create a New Class Session</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="message">
+                {% for category, message in messages %}
+                    <p class="{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('create_session') }}">
+        <label for="topic">Class Topic:</label>
+        <input type="text" name="topic" id="topic" required>
+
+        <label for="start_time">Start Time:</label>
+        <input type="datetime-local" name="start_time" id="start_time" required>
+
+        <label for="end_time">End Time:</label>
+        <input type="datetime-local" name="end_time" id="end_time" required>
+
+        <label for="teacher_username">Teacher Username:</label>
+        <select name="teacher_username" id="teacher_username" required>
+            {% for teacher in teachers %}
+                <option value="{{ teacher.username }}">{{ teacher.username }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Create Session</button>
+    </form>
+
 </body>
 </html>

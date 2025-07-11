@@ -44,13 +44,7 @@ def inject_now():
     return {'now': datetime.utcnow}
 
 # --- Models ---
-class ClassSession(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    class_name = db.Column(db.String(100), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=True)
-    end_time = db.Column(db.DateTime, nullable=True)
-    is_live = db.Column(db.Boolean, default=False)
-
+# --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -58,6 +52,15 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     reset_code = db.Column(db.String(100), nullable=True)
+
+    sessions = db.relationship('ClassSession', backref='teacher', lazy=True)
+
+class ClassSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
+    topic = db.Column(db.String(200))
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -123,16 +126,35 @@ def sessions():
     all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('sessions.html', sessions=all_sessions)
 
-@app.route('/create-session', methods=['GET', 'POST'])
+@app.route('/create_session', methods=['GET', 'POST'])
 def create_session():
     if request.method == 'POST':
-        class_name = request.form['class_name']
-        session_obj = ClassSession(class_name=class_name)
-        db.session.add(session_obj)
+        topic = request.form['topic']
+        start_time = datetime.strptime(request.form['start_time'], '%Y-%m-%dT%H:%M')
+        end_time = datetime.strptime(request.form['end_time'], '%Y-%m-%dT%H:%M')
+        teacher_username = request.form['teacher_username']
+
+        # Find teacher by username
+        teacher = User.query.filter_by(username=teacher_username, role='teacher').first()
+        if not teacher:
+            flash("Selected teacher does not exist.", "danger")
+            return redirect(url_for('create_session'))
+
+        new_session = ClassSession(
+            topic=topic,
+            start_time=start_time,
+            end_time=end_time,
+            teacher_id=teacher.id
+        )
+
+        db.session.add(new_session)
         db.session.commit()
-        flash('Session created successfully!')
-        return redirect(url_for('sessions'))
-    return render_template('create_session.html')
+        flash('Class session created successfully!', 'success')
+        return redirect(url_for('all_sessions'))
+
+    # GET request
+    teachers = User.query.filter_by(role='teacher').all()
+    return render_template('create_session.html', teachers=teachers)
 
 @app.route('/start-session/<int:session_id>')
 def start_session(session_id):
