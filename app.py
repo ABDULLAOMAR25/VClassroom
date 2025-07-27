@@ -212,7 +212,7 @@ def join_session(session_id):
         identity=session['username']
     )
 
-@app.route('/get_token')
+@app.route("/get_token", methods=["POST"])
 def get_token():
     room_name = request.args.get('room') or 'default-room'
     identity = request.args.get('identity') or 'user'
