@@ -3,6 +3,7 @@ flask_sqlalchemy
 psycopg2-binary
 python-dotenv
 requests
+livekit-api
 pyjwt
 gunicorn
 flask-cors
