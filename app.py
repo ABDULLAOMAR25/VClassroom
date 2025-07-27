@@ -212,49 +212,22 @@ def join_session(session_id):
         identity=session['username']
     )
 
-@app.route('/get_token', methods=['POST'])
+@app.route('/get_token')
 def get_token():
-    try:
-        if 'user_id' not in session or 'username' not in session:
-            return jsonify({"error": "Unauthorized: Please log in first."}), 401
+    room_name = request.args.get('room') or 'default-room'
+    identity = request.args.get('identity') or 'user'
 
-        data = request.get_json()
-        identity = data.get("identity")
-        room = data.get("room")
+    token = AccessToken(api_key, api_secret)
+    grant = VideoGrant(
+        room=room_name,
+        room_join=True,
+        can_publish=True,
+        can_subscribe=True
+    )
+    token.add_grant(grant)
+    token.identity = identity
 
-        if not identity or not room:
-            return jsonify({"error": "❌ Missing identity or room"}), 400
-
-        if identity != session['username']:
-            return jsonify({"error": "❌ Unauthorized identity access."}), 403
-
-        if not API_KEY or not API_SECRET or not LIVEKIT_URL:
-            return jsonify({"error": "❌ LiveKit environment not set"}), 500
-
-        now = int(time.time())
-        payload = {
-            "iss": API_KEY,
-            "sub": identity,
-            "iat": now,
-            "exp": now + 3600,
-            "nbf": now,
-            "grants": {
-                "roomJoin": True,
-                "room": room,
-                "canPublish": True,
-                "canSubscribe": True
-            }
-        }
-
-        token = jwt.encode(payload, API_SECRET, algorithm="HS256")
-        if isinstance(token, bytes):
-            token = token.decode('utf-8')
-
-        return jsonify({"token": token, "url": LIVEKIT_URL})
-
-    except Exception as e:
-        print("❌ Error in /get_token:", e)
-        return jsonify({"error": str(e)}), 500
+    return jsonify({'token': token.to_jwt()})
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():

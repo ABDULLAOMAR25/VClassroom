@@ -145,27 +145,40 @@
   </div>
 
   <script>
-    const roomName = "{{ room_name }}";
-    const identity = "{{ identity }}";
+    // ✅ Get room name from Jinja or fallback to URL
+    let roomName = "{{ room_name }}";
+    if (!roomName || roomName === "") {
+      roomName = window.location.pathname.split("/").pop(); // e.g., /join_session/1 → "1"
+    }
+
+    // ✅ Identity from Jinja or auto-generate
+    let identity = "{{ identity }}";
+    if (!identity || identity === "") {
+      identity = "user-" + Math.floor(Math.random() * 1000);
+    }
+
     let room;
     let localTracks = [];
     let micEnabled = true;
 
     async function connectToRoom() {
       try {
+        // ✅ Request token from backend
         const res = await fetch("/get_token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ room: roomName, identity: identity })
         });
 
-        if (!res.ok) throw new Error("Failed to get token");
+        if (!res.ok) throw new Error("Failed to get token from server");
 
         const { token, url } = await res.json();
-        if (!token || !url) throw new Error("Token or URL missing");
+        if (!token || !url) throw new Error("Token or URL missing from server response");
 
+        // ✅ Create LiveKit room
         room = new LivekitClient.Room();
 
+        // Handle remote video tracks
         room.on("trackSubscribed", (track, publication, participant) => {
           if (track.kind === "video") {
             const videoEl = track.attach();
@@ -178,6 +191,7 @@
           }
         });
 
+        // Handle participants list
         room.on("participantConnected", participant => {
           const li = document.createElement("li");
           li.id = participant.sid;
@@ -194,11 +208,12 @@
           console.log("Room disconnected");
         });
 
+        // ✅ Connect to LiveKit with token
         await room.connect(url, token);
-        alert("✅ Connected to LiveKit room as " + identity);
+        alert("✅ Connected to LiveKit room: " + roomName + " as " + identity);
       } catch (err) {
         alert("❌ Error: " + err.message);
-        console.error(err);
+        console.error("Connection error:", err);
       }
     }
 
@@ -215,7 +230,7 @@
             const videoEl = track.attach();
             videoEl.id = "local-video";
             videoEl.autoplay = true;
-            videoEl.muted = true;
+            videoEl.muted = true; // Prevent feedback
             videoEl.playsInline = true;
             videoEl.style.borderRadius = "12px";
             videoEl.style.width = "45%";
@@ -262,12 +277,14 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
+    // ✅ Button bindings
     document.getElementById("btnCamera").onclick = startCamera;
     document.getElementById("btnMic").onclick = toggleMic;
     document.getElementById("btnRaiseHand").onclick = raiseHand;
     document.getElementById("btnSend").onclick = sendMessage;
 
+    // ✅ Connect on page load
     connectToRoom();
-  </script>
+</script>
 </body>
 </html>
