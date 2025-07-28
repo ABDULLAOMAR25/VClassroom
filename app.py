@@ -218,7 +218,6 @@ def get_token():
     room_name = request.args.get('room') or 'default-room'
     identity = request.args.get('identity') or 'user'
 
-<<<<<<< HEAD:public/app.py
     # Set token expiration to 1 minute from now
     expire_time = datetime.utcnow() + timedelta(minutes=1)
 
@@ -232,7 +231,6 @@ def get_token():
     token.add_grant(grant)
 
     # Return the JWT token
-=======
     token = AccessToken(api_key, api_secret)
     grant = VideoGrant(
         room=room_name,
@@ -242,8 +240,6 @@ def get_token():
     )
     token.add_grant(grant)
     token.identity = identity
-
->>>>>>> 8a291f9487ffeca61ea01b9cd8098907917720a2:app.py
     return jsonify({'token': token.to_jwt()})
 
 @app.route('/upload', methods=['GET', 'POST'])
