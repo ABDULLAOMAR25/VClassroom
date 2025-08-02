@@ -5,6 +5,7 @@ from flask_cors import CORS
 import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from livekit import api
 import os
 import zipfile
 import csv
@@ -213,33 +214,21 @@ def join_session(session_id):
         identity=session['username']
     )
 
-@app.route("/get_token", methods=["POST"])
+@app.route('/get_token')
 def get_token():
-    room_name = request.args.get('room') or 'default-room'
-    identity = request.args.get('identity') or 'user'
+    api_key = os.getenv('LIVEKIT_API_KEY')
+    api_secret = os.getenv('LIVEKIT_API_SECRET')
 
-    # Set token expiration to 1 minute from now
-    expire_time = datetime.utcnow() + timedelta(minutes=1)
+    token = api.AccessToken(api_key, api_secret) \
+        .with_identity("identity") \
+        .with_name("name") \
+        .with_grants(api.VideoGrants(
+            room_join=True,
+            room="my-room",
+            can_publish=True,
+            can_subscribe=True
+        ))
 
-    token = AccessToken(api_key, api_secret, identity=identity, ttl=60)  # ttl in seconds
-    grant = VideoGrant(
-        room=room_name,
-        room_join=True,
-        can_publish=True,
-        can_subscribe=True
-    )
-    token.add_grant(grant)
-
-    # Return the JWT token
-    token = AccessToken(api_key, api_secret)
-    grant = VideoGrant(
-        room=room_name,
-        room_join=True,
-        can_publish=True,
-        can_subscribe=True
-    )
-    token.add_grant(grant)
-    token.identity = identity
     return jsonify({'token': token.to_jwt()})
 
 @app.route('/upload', methods=['GET', 'POST'])
