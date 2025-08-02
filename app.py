@@ -214,7 +214,7 @@ def join_session(session_id):
         identity=session['username']
     )
 
-@app.route('/get_token')
+@app.route('/get_token', methods=['GET', 'POST'])
 def get_token():
     api_key = os.getenv('LIVEKIT_API_KEY')
     api_secret = os.getenv('LIVEKIT_API_SECRET')
