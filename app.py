@@ -191,11 +191,42 @@ def end_session(session_id):
     db.session.commit()
     flash("Session ended!")
     return redirect(url_for('sessions'))
-
 @app.route('/init-db')
 def init_db():
-    db.create_all()
-    return "✅ Database initialized!"
+    db.create_all()  # Create all tables
+
+    def hash_password(password):
+        import hashlib
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    defaults = [
+        {"username": "Abdulla", "email": "mhatariabdulla@gmail.com", "password": "admin123", "role": "admin"},
+        {"username": "Omar", "email": "teacher1@example.com", "password": "teacher123", "role": "teacher"},
+        {"username": "student1", "email": "student1@example.com", "password": "student123", "role": "student"}
+    ]
+
+    created_users = []
+    for u in defaults:
+        existing_user = User.query.filter(
+            (User.username == u["username"]) | (User.email == u["email"])
+        ).first()
+
+        if not existing_user:
+            user = User(
+                username=u["username"],
+                email=u["email"],
+                password=hash_password(u["password"]),
+                role=u["role"]
+            )
+            db.session.add(user)
+            created_users.append(u["username"])
+
+    db.session.commit()
+
+    if created_users:
+        return f"✅ Database initialized! Created users: {', '.join(created_users)}"
+    else:
+        return "✅ Database initialized! No new users were added."
 
 @app.route('/join_session/<int:session_id>')
 def join_session(session_id):
@@ -325,30 +356,6 @@ def manage_users():
         users = User.query.order_by(User.id).all()
 
     return render_template('manage_users.html', users=users, role_filter=role_filter)
-
-@app.route('/add-default-users')
-def add_default_users():
-    messages = []
-    if not User.query.filter_by(username="Abdulla").first():
-        admin = User(username="Abdulla", email="mhatariabdulla@gmail.com", password="admin123", role="admin")
-        db.session.add(admin)
-        messages.append("✅ Admin user created.")
-    else:
-        messages.append("⚠️ Admin user already exists.")
-    if not User.query.filter_by(username="Omar").first():
-        teacher = User(username="Omar", email="teacher1@example.com", password="teacher123", role="teacher")
-        db.session.add(teacher)
-        messages.append("✅ Teacher user created.")
-    else:
-        messages.append("⚠️ Teacher user already exists.")
-    if not User.query.filter_by(username="student1").first():
-        student = User(username="student1", email="student1@example.com", password="student123", role="student")
-        db.session.add(student)
-        messages.append("✅ Student user created.")
-    else:
-        messages.append("⚠️ Student user already exists.")
-    db.session.commit()
-    return "<br>".join(messages)
 
 @app.route('/admin/settings', methods=['GET', 'POST'])
 def admin_settings():
