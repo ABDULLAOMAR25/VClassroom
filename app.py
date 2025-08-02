@@ -251,17 +251,24 @@ def join_session(session_id):
         identity=session['username']
     )
 
-@app.route('/get_token', methods=['GET', 'POST'])
+@app.route('/get_token', methods=['POST'])
 def get_token():
+    data = request.get_json()
+    room_name = data.get('room')
+    identity = session.get('username', 'guest')
+
+    if not room_name:
+        return jsonify({'error': 'Room name is required'}), 400
+
     api_key = os.getenv('LIVEKIT_API_KEY')
     api_secret = os.getenv('LIVEKIT_API_SECRET')
 
     token = api.AccessToken(api_key, api_secret) \
-        .with_identity("identity") \
-        .with_name("name") \
+        .with_identity(identity) \
+        .with_name(identity) \
         .with_grants(api.VideoGrants(
             room_join=True,
-            room="my-room",
+            room=room_name,
             can_publish=True,
             can_subscribe=True
         ))
