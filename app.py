@@ -15,6 +15,9 @@ from sqlalchemy import text
 from pathlib import Path
 import logging
 from logging.handlers import RotatingFileHandler
+import hashlib
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 import sys
 
 # --- Load environment variables ---
@@ -116,15 +119,18 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
+
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == hash_password(password):
             session['user_id'] = user.id
             session['role'] = user.role
             session['username'] = user.username
-            flash(f"Logged in successfully as {user.role.capitalize()}")
+            flash(f"✅ Logged in successfully as {user.role.capitalize()}")
             return redirect(next_page or url_for(f"{user.role}_dashboard"))
-        flash("Invalid username or password")
+
+        flash("❌ Invalid username or password")
         return redirect(url_for('login'))
+
     return render_template('login.html')
 
 @app.route('/logout')
