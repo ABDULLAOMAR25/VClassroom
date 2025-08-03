@@ -400,13 +400,13 @@ def manage_users():
             elif User.query.filter((User.username == username) | (User.email == email)).first():
                 flash("⚠️ Username or email already exists.")
             else:
-                # ✅ Hash the password before saving
+                # ✅ Hash password before saving
                 hashed_password = hash_password(password)
                 new_user = User(username=username, email=email, password=hashed_password, role=role)
                 db.session.add(new_user)
                 db.session.commit()
-                flash(f"✅ New {role} user '{username}' added with hashed password.")
-                return redirect(url_for('manage_users'))
+                flash(f"✅ New {role} user '{username}' added successfully with a hashed password.")
+                return redirect(url_for('manage_users'))  # Refresh page
 
         elif request.form.get('delete_user_id'):
             user_id = request.form.get('delete_user_id')
@@ -419,6 +419,7 @@ def manage_users():
                 flash("⚠️ User not found.")
         return redirect(url_for('manage_users'))
 
+    # Filter users if role is provided
     role_filter = request.args.get('role')
     if role_filter in ['admin', 'teacher', 'student']:
         users = User.query.filter_by(role=role_filter).order_by(User.id).all()

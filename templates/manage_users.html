@@ -207,7 +207,6 @@
     <input type="password" name="password" placeholder="Password" required>
     <select name="role" required>
       <option value="">-- Select Role --</option>
-      <option value="admin">Admin</option>
       <option value="teacher">Teacher</option>
       <option value="student">Student</option>
     </select>
@@ -217,9 +216,6 @@
   <div class="filter-buttons" role="group" aria-label="Filter users by role">
     <form method="get" style="display:inline;">
       <button type="submit" name="role" value="" class="{{ '' if role_filter else 'active' }}">All</button>
-    </form>
-    <form method="get" style="display:inline;">
-      <button type="submit" name="role" value="admin" class="{{ 'active' if role_filter=='admin' else '' }}">Admin</button>
     </form>
     <form method="get" style="display:inline;">
       <button type="submit" name="role" value="teacher" class="{{ 'active' if role_filter=='teacher' else '' }}">Teacher</button>
