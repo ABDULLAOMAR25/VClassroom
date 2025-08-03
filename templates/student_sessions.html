@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join a Class</title>
     <style>
         body {
@@ -26,8 +27,9 @@
             padding: 20px;
         }
 
-        h2 {
+        h1 {
             color: #2c3e50;
+            text-align: center;
             margin-bottom: 20px;
         }
 
@@ -51,88 +53,159 @@
             background-color: #149174;
         }
 
-        ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            gap: 15px;
-        }
-
-        li {
-            background-color: white;
-            padding: 15px;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        li a {
-            text-decoration: none;
-            color: #2c3e50;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #1abc9c;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .status-live {
+            color: #27ae60;
             font-weight: bold;
-            font-size: 16px;
-            display: block;
         }
 
-        li a:hover {
-            color: #1abc9c;
+        .status-ended {
+            color: #e74c3c;
+            font-weight: bold;
         }
 
-        @media (max-width: 600px) {
-            nav {
-                text-align: center;
+        .status-not-started {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .join-btn {
+            background-color: #1abc9c;
+            color: white;
+            padding: 8px 14px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .join-btn:hover {
+            background-color: #16a085;
+        }
+
+        .join-btn.disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            th, td {
+                font-size: 14px;
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
             }
 
-            nav a {
-                display: block;
-                margin: 5px 0;
+            th {
+                display: none;
+            }
+
+            td {
+                padding: 10px;
+                text-align: right;
+                position: relative;
+            }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                font-weight: bold;
+                color: #2c3e50;
             }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📚 Available Classes</h1>
-    <table>
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Topic</th>
-            <th>Teacher</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% if sessions %}
-            {% for session in sessions %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ session.topic }}</td>
-                    <td>{{ session.teacher.username if session.teacher else 'N/A' }}</td>
-                    <td>
-                        {% if session.status == 'Live' %}
-                            <span class="status-live">Live</span>
-                        {% elif session.status == 'Ended' %}
-                            <span class="status-ended">Ended</span>
-                        {% else %}
-                            <span class="status-not-started">Not Started</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if session.status == 'Live' %}
-                            <a class="join-btn" href="{{ url_for('join_session', session_id=session.id) }}">Join</a>
-                        {% else %}
-                            <a class="join-btn disabled" href="javascript:void(0);" disabled>Join</a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        {% else %}
-            <tr><td colspan="5" style="text-align:center;">No classes available yet.</td></tr>
-        {% endif %}
-        </tbody>
-    </table>
-</div>
+<header>
+    <h2>📚 Join a Class</h2>
+</header>
+<main>
+    <nav>
+        <a href="{{ url_for('student_dashboard') }}">⬅ Back to Dashboard</a>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </nav>
+    <div class="container">
+        <h1>Available Classes</h1>
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Topic</th>
+                <th>Teacher</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if sessions %}
+                {% for session in sessions %}
+                    <tr>
+                        <td data-label="#"> {{ loop.index }} </td>
+                        <td data-label="Topic">{{ session.topic }}</td>
+                        <td data-label="Teacher">{{ session.teacher.username if session.teacher else 'N/A' }}</td>
+                        <td data-label="Status">
+                            {% if session.status == 'Live' %}
+                                <span class="status-live">Live</span>
+                            {% elif session.status == 'Ended' %}
+                                <span class="status-ended">Ended</span>
+                            {% else %}
+                                <span class="status-not-started">Not Started</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Action">
+                            {% if session.status == 'Live' %}
+                                <a class="join-btn" href="{{ url_for('join_session', session_id=session.id) }}">Join</a>
+                            {% else %}
+                                <a class="join-btn disabled" href="javascript:void(0);" disabled>Join</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="5" style="text-align:center;">No classes available yet.</td></tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+</main>
+<footer>
+    &copy; 2025 Virtual Classroom | All Rights Reserved
+</footer>
 </body>
 </html>
