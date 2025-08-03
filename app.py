@@ -189,6 +189,14 @@ def start_session(session_id):
     flash("Session started!")
     return redirect(url_for('sessions'))
 
+@app.route('/student/sessions')
+def student_sessions():
+    if session.get('role') != 'student':
+        return redirect(url_for('login'))
+
+    sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
+    return render_template('student_sessions.html', sessions=sessions)
+
 @app.route('/end-session/<int:session_id>')
 def end_session(session_id):
     session_obj = ClassSession.query.get_or_404(session_id)
@@ -340,15 +348,18 @@ def manage_users():
             email = request.form.get('email')
             password = request.form.get('password')
             role = request.form.get('role')
+
             if not all([username, email, password, role]):
                 flash("⚠️ All fields are required to add a user.")
             elif User.query.filter((User.username == username) | (User.email == email)).first():
                 flash("⚠️ Username or email already exists.")
             else:
-                new_user = User(username=username, email=email, password=password, role=role)
+                # ✅ Hash the password before saving
+                hashed_password = hash_password(password)
+                new_user = User(username=username, email=email, password=hashed_password, role=role)
                 db.session.add(new_user)
                 db.session.commit()
-                flash(f"✅ New {role} user '{username}' added.")
+                flash(f"✅ New {role} user '{username}' added with hashed password.")
                 return redirect(url_for('manage_users'))
 
         elif request.form.get('delete_user_id'):

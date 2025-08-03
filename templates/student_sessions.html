@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join a Class</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header, footer {
+            background-color: #1abc9c;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        nav {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background-color: #16a085;
+            border-radius: 4px;
+            margin-left: 10px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #149174;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 15px;
+        }
+
+        li {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        li a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 16px;
+            display: block;
+        }
+
+        li a:hover {
+            color: #1abc9c;
+        }
+
+        @media (max-width: 600px) {
+            nav {
+                text-align: center;
+            }
+
+            nav a {
+                display: block;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📚 Available Classes</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Topic</th>
+            <th>Teacher</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if sessions %}
+            {% for session in sessions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ session.topic }}</td>
+                    <td>{{ session.teacher.username if session.teacher else 'N/A' }}</td>
+                    <td>
+                        {% if session.status == 'Live' %}
+                            <span class="status-live">Live</span>
+                        {% elif session.status == 'Ended' %}
+                            <span class="status-ended">Ended</span>
+                        {% else %}
+                            <span class="status-not-started">Not Started</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if session.status == 'Live' %}
+                            <a class="join-btn" href="{{ url_for('join_session', session_id=session.id) }}">Join</a>
+                        {% else %}
+                            <a class="join-btn disabled" href="javascript:void(0);" disabled>Join</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr><td colspan="5" style="text-align:center;">No classes available yet.</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

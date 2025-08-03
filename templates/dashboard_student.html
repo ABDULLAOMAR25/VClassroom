@@ -5,30 +5,44 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
             margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensures full viewport height */
+        }
+
+        header, footer {
+            background-color: #1abc9c;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        main {
+            flex: 1; /* This pushes the footer to the bottom */
             padding: 20px;
         }
 
         h2 {
             color: #2c3e50;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         nav {
-            background-color: #1abc9c;
-            padding: 10px;
             text-align: right;
-            border-radius: 5px;
+            margin-bottom: 20px;
         }
 
         nav a {
             color: white;
             text-decoration: none;
-            font-weight: bold;
             padding: 8px 16px;
             background-color: #16a085;
             border-radius: 4px;
+            margin-left: 10px;
+            display: inline-block;
             transition: background-color 0.3s;
         }
 
@@ -39,18 +53,19 @@
         ul {
             list-style-type: none;
             padding: 0;
-            margin-top: 30px;
+            margin: 0;
+            display: grid;
+            gap: 15px;
         }
 
-        ul li {
+        li {
             background-color: white;
-            margin: 10px 0;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        ul li a {
+        li a {
             text-decoration: none;
             color: #2c3e50;
             font-weight: bold;
@@ -58,23 +73,41 @@
             display: block;
         }
 
-        ul li a:hover {
+        li a:hover {
             color: #1abc9c;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 600px) {
+            nav {
+                justify-content: center;
+            }
+
+            nav a {
+                flex: 1 1 100%;
+                text-align: center;
+            }
+
+            ul li a {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <h2>🎓 Welcome, Student!</h2>
-    <nav>
-        <a href="{{ url_for('logout') }}">🚪 Logout</a>
-    </nav>
-    <ul>
-        <li><a href="{{ url_for('sessions') }}">📅 View Sessions</a></li>
-        <li><a href="#">📥 Assignments</a></li>
-        <li><a href="#">📊 Progress</a></li>
-    </ul>
-</body>
-
+    <header>
+        <h2>🎓 Welcome, Student!</h2>
+    </header>
+    <main>
+        <nav>
+            <a href="{{ url_for('logout') }}">🚪 Logout</a>
+        </nav>
+        <ul>
+            <li><a href="{{ url_for('student_sessions') }}">📅 Join Live Classes</a></li>
+            <li><a href="#">📥 Assignments</a></li>
+            <li><a href="#">📊 Progress</a></li>
+        </ul>
+    </main>
     <footer>
         &copy; 2025 Virtual Classroom | All Rights Reserved
     </footer>
