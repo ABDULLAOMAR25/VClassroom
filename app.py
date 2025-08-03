@@ -104,6 +104,14 @@ class Attendance(db.Model):
     user = db.relationship('User', backref='attendances')
     session = db.relationship('ClassSession', backref='attendances')
 
+class Resource(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    filetype = db.Column(db.String(50), nullable=False)
+    upload_time = db.Column(db.DateTime, default=datetime.utcnow)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    teacher = db.relationship('User', backref='resources')
+
 # --- Helper ---
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
@@ -284,38 +292,71 @@ def get_token():
     return jsonify({'token': token.to_jwt()})
 
 @app.route('/upload', methods=['GET', 'POST'])
-def upload_resources():
+def upload():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash("Access denied. Teachers only.")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         video = request.files.get('video')
         notes = request.files.get('notes')
-        send_zip = request.form.get('send_zip')
         saved_files = []
-        if video and allowed_file(video.filename, ALLOWED_VIDEO):
-            filename = secure_filename(video.filename)
-            video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            saved_files.append(filename)
-        if notes and allowed_file(notes.filename, ALLOWED_NOTES):
-            filename = secure_filename(notes.filename)
-            notes.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            saved_files.append(filename)
-        if send_zip and saved_files:
-            zip_path = os.path.join(app.config['UPLOAD_FOLDER'], 'resources.zip')
-            with zipfile.ZipFile(zip_path, 'w') as zipf:
-                for f in saved_files:
-                    zipf.write(os.path.join(app.config['UPLOAD_FOLDER'], f), arcname=f)
-            flash('Files uploaded and zipped successfully.')
+
+        def save_file(file, allowed_ext):
+            if file and allowed_file(file.filename, allowed_ext):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                filetype = filename.rsplit('.', 1)[1].upper()
+                # Save in DB
+                resource = Resource(filename=filename, filetype=filetype, teacher_id=session['user_id'])
+                db.session.add(resource)
+                db.session.commit()
+                return filename
+            return None
+
+        if video:
+            saved_files.append(save_file(video, ALLOWED_VIDEO))
+        if notes:
+            saved_files.append(save_file(notes, ALLOWED_NOTES))
+
+        if saved_files:
+            flash('Files uploaded successfully and saved in your resources.')
         else:
-            flash('Files uploaded successfully.')
-        return redirect(url_for('upload_resources'))
+            flash('No valid files uploaded.')
+
+        return redirect(url_for('my_resources'))
+
     return render_template('upload.html')
 
-@app.route('/resources')
-def list_resources():
-    files = []
-    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-        filetype = filename.rsplit('.', 1)[1].upper()
-        files.append({'filename': filename, 'filetype': filetype})
-    return render_template('resources.html', resources=files)
+@app.route('/delete-resource/<int:resource_id>', methods=['POST'])
+def delete_resource(resource_id):
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        return redirect(url_for('login'))
+
+    resource = Resource.query.get_or_404(resource_id)
+    if resource.teacher_id != session['user_id']:
+        flash("You cannot delete this resource.")
+        return redirect(url_for('my_resources'))
+
+    # Delete file from uploads folder
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], resource.filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    db.session.delete(resource)
+    db.session.commit()
+    flash("Resource deleted successfully.")
+    return redirect(url_for('my_resources'))
+
+@app.route('/my-resources')
+def my_resources():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash("Access denied. Teachers only.")
+        return redirect(url_for('login'))
+
+    resources = Resource.query.filter_by(teacher_id=session['user_id']).order_by(Resource.upload_time.desc()).all()
+    return render_template('my_resources.html', resources=resources)
+
 
 @app.route('/download/<path:filename>')
 def download_resource(filename):

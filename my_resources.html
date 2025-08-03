@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Resources</title>
+    <style>
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; }
+        form { display: inline; }
+        .btn { padding: 5px 10px; margin: 2px; background: #007bff; color: #fff; border: none; cursor: pointer; }
+        .btn-delete { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center;">My Uploaded Resources</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Filename</th>
+                <th>Type</th>
+                <th>Uploaded On</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resource in resources %}
+            <tr>
+                <td>{{ resource.filename }}</td>
+                <td>{{ resource.filetype }}</td>
+                <td>{{ resource.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a class="btn" href="{{ url_for('download_resource', filename=resource.filename) }}">Download</a>
+                    <form method="POST" action="{{ url_for('delete_resource', resource_id=resource.id) }}">
+                        <button type="submit" class="btn btn-delete">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center;">No resources uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
