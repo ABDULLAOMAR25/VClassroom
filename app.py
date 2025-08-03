@@ -328,6 +328,11 @@ def upload_resources():
 
     return render_template('upload.html')
 
+@app.route('/resources')
+def list_resources():
+    resources = Resource.query.order_by(Resource.upload_time.desc()).all()
+    return render_template('list_resources.html', resources=resources)
+
 @app.route('/delete-resource/<int:resource_id>', methods=['POST'])
 def delete_resource(resource_id):
     if 'user_id' not in session or session.get('role') != 'teacher':

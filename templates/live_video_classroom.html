@@ -1,290 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Live Video Classroom</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/livekit-client/2.14.0/livekit-client.umd.min.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Video Classroom</title>
+<script src="https://cdn.jsdelivr.net/npm/@livekit/client/dist/livekit-client.umd.min.js"></script>
+<style>
     body {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #f0f2f5;
+        font-family: Arial, sans-serif;
+        background: #f8f9fa;
+        padding: 20px;
     }
-    header {
-      padding: 1rem;
-      background-color: #2d3436;
-      color: white;
-      text-align: center;
-      font-size: 1.5rem;
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    #main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
+    input, button {
+        padding: 10px;
+        font-size: 16px;
+        margin: 5px 0;
+        width: 100%;
     }
-    #left-panel {
-      flex: 3;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-    }
-    #video-container {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 1rem;
+    #videos {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
     }
     video {
-      width: 45%;
-      max-width: 480px;
-      border-radius: 12px;
-      background: black;
+        width: 48%;
+        border: 2px solid #007bff;
+        border-radius: 10px;
     }
-    #controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    #controls button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background-color: #0984e3;
-      color: white;
-      transition: background-color 0.3s;
-    }
-    #controls button:hover {
-      background-color: #74b9ff;
-    }
-    #right-panel {
-      flex: 1;
-      background: #fff;
-      border-left: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-    }
-    #participants {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      border-bottom: 1px solid #ccc;
-    }
-    #chat {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-    }
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      padding: 10px;
-      background-color: #fafafa;
-    }
-    #chat-input {
-      display: flex;
-      gap: 10px;
-    }
-    #chat-input input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    #chat-input button {
-      padding: 10px;
-      background-color: #00b894;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
+</style>
 </head>
 <body>
-  <header>Live Video Classroom - Room {{ room_name }}</header>
-  <div id="main">
-    <div id="left-panel">
-      <div id="video-container">
-        <video id="local-video" autoplay muted playsinline></video>
-        <video id="remote-video" autoplay playsinline></video>
-      </div>
-      <div id="controls">
-        <button id="btnCamera">📷 Camera</button>
-        <button id="btnMic">🎤 Mic On</button>
-        <button id="btnRaiseHand">✋ Raise Hand</button>
-      </div>
-    </div>
-    <div id="right-panel">
-      <div id="participants">
-        <strong>Participants:</strong>
-        <ul id="participant-list"></ul>
-      </div>
-      <div id="chat">
-        <div id="messages"></div>
-        <div id="chat-input">
-          <input type="text" id="messageBox" placeholder="Type a message..." />
-          <button id="btnSend">Send</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="container">
+    <h2>Join Live Video Classroom</h2>
+    <input type="text" id="room" placeholder="Enter Room Name" />
+    <button onclick="joinRoom()">Join Room</button>
+    <div id="status" style="margin-top: 10px; color: green;"></div>
+    <div id="videos"></div>
+</div>
 
-  <script>
-    // ✅ Get room name from Jinja or fallback to URL
-    let roomName = "{{ room_name }}";
-    if (!roomName || roomName === "") {
-      roomName = window.location.pathname.split("/").pop(); // e.g., /join_session/1 → "1"
+<script>
+async function joinRoom() {
+    const roomName = document.getElementById('room').value.trim();
+    if (!roomName) {
+        alert('Please enter a room name');
+        return;
     }
 
-    // ✅ Identity from Jinja or auto-generate
-    let identity = "{{ identity }}";
-    if (!identity || identity === "") {
-      identity = "user-" + Math.floor(Math.random() * 1000);
-    }
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = 'Generating token...';
 
-    let room;
-    let localTracks = [];
-    let micEnabled = true;
-
-    async function connectToRoom() {
-      try {
-        // ✅ Request token from backend
-        const res = await fetch("/get_token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room: roomName, identity: identity })
+    try {
+        // 1. Get Token from Flask backend
+        const res = await fetch('/get_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room: roomName })
         });
-
-        if (!res.ok) throw new Error("Failed to get token from server");
-
-        const { token, url } = await res.json();
-        if (!token || !url) throw new Error("Token or URL missing from server response");
-
-        // ✅ Create LiveKit room
-        room = new LivekitClient.Room();
-
-        // Handle remote video tracks
-        room.on("trackSubscribed", (track, publication, participant) => {
-          if (track.kind === "video") {
-            const videoEl = track.attach();
-            videoEl.autoplay = true;
-            videoEl.playsInline = true;
-            videoEl.style.borderRadius = "12px";
-            videoEl.style.width = "45%";
-            videoEl.style.background = "black";
-            document.getElementById("video-container").appendChild(videoEl);
-          }
-        });
-
-        // Handle participants list
-        room.on("participantConnected", participant => {
-          const li = document.createElement("li");
-          li.id = participant.sid;
-          li.textContent = participant.identity;
-          document.getElementById("participant-list").appendChild(li);
-        });
-
-        room.on("participantDisconnected", participant => {
-          const li = document.getElementById(participant.sid);
-          if (li) li.remove();
-        });
-
-        room.on("disconnected", () => {
-          console.log("Room disconnected");
-        });
-
-        // ✅ Connect to LiveKit with token
-        await room.connect(url, token);
-        alert("✅ Connected to LiveKit room: " + roomName + " as " + identity);
-      } catch (err) {
-        alert("❌ Error: " + err.message);
-        console.error("Connection error:", err);
-      }
-    }
-
-    async function startCamera() {
-      try {
-        if (!room) return alert("Not connected to room");
-
-        localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
-
-        for (const track of localTracks) {
-          await room.localParticipant.publishTrack(track);
-
-          if (track.kind === "video") {
-            const videoEl = track.attach();
-            videoEl.id = "local-video";
-            videoEl.autoplay = true;
-            videoEl.muted = true; // Prevent feedback
-            videoEl.playsInline = true;
-            videoEl.style.borderRadius = "12px";
-            videoEl.style.width = "45%";
-            videoEl.style.background = "black";
-
-            const container = document.getElementById("video-container");
-            const old = document.getElementById("local-video");
-            if (old) old.remove();
-
-            container.appendChild(videoEl);
-          }
+        const data = await res.json();
+        if (data.error) {
+            statusDiv.style.color = 'red';
+            statusDiv.textContent = 'Error: ' + data.error;
+            return;
         }
-        console.log("✅ Camera and mic started");
-      } catch (err) {
-        console.error("❌ Camera error:", err);
-        alert("Could not start camera: " + err.message);
-      }
+
+        const token = data.token;
+        statusDiv.textContent = 'Token received. Connecting...';
+
+        // 2. Connect to LiveKit
+        const livekitRoom = new LivekitClient.Room();
+        livekitRoom.on('trackSubscribed', (track, publication, participant) => {
+            if (track.kind === 'video') {
+                const videoEl = track.attach();
+                document.getElementById('videos').appendChild(videoEl);
+            }
+        });
+
+        livekitRoom.on('disconnected', () => {
+            statusDiv.textContent = 'Disconnected from room.';
+        });
+
+        await livekitRoom.connect("{{LIVEKIT_URL}}", token);
+        statusDiv.textContent = 'Connected to room: ' + roomName;
+
+        // 3. Publish local camera & mic
+        await livekitRoom.localParticipant.enableCameraAndMicrophone();
+
+        // Show local video
+        livekitRoom.localParticipant.videoTracks.forEach(pub => {
+            const videoEl = pub.track.attach();
+            document.getElementById('videos').appendChild(videoEl);
+        });
+
+    } catch (err) {
+        console.error(err);
+        statusDiv.style.color = 'red';
+        statusDiv.textContent = 'Error connecting to LiveKit.';
     }
-
-    function toggleMic() {
-      const audioTrack = localTracks.find(t => t.kind === "audio");
-      if (!audioTrack) return;
-      micEnabled = !micEnabled;
-      micEnabled ? audioTrack.enable() : audioTrack.disable();
-      document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
-    }
-
-    function raiseHand() {
-      const div = document.createElement("div");
-      div.textContent = `${identity} ✋ raised hand`;
-      const msgBox = document.getElementById("messages");
-      msgBox.appendChild(div);
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    function sendMessage() {
-      const input = document.getElementById("messageBox");
-      if (!input.value.trim()) return;
-      const div = document.createElement("div");
-      div.textContent = `${identity}: ${input.value}`;
-      const msgBox = document.getElementById("messages");
-      msgBox.appendChild(div);
-      input.value = "";
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    // ✅ Button bindings
-    document.getElementById("btnCamera").onclick = startCamera;
-    document.getElementById("btnMic").onclick = toggleMic;
-    document.getElementById("btnRaiseHand").onclick = raiseHand;
-    document.getElementById("btnSend").onclick = sendMessage;
-
-    // ✅ Connect on page load
-    connectToRoom();
+}
 </script>
 </body>
 </html>
