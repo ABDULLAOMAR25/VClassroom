@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Resources</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header, footer {
+            background-color: #1abc9c;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #16a085;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        form {
+            display: inline;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            margin: 2px;
+            background: #1abc9c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #149174;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background: #a71d2a;
+        }
+
+        /* ✅ Mobile Responsive */
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                margin-bottom: 15px;
+                border-bottom: 2px solid #ddd;
+                background: #fff;
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            td {
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+                font-size: 14px;
+            }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                top: 10px;
+                font-weight: bold;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>📂 My Uploaded Resources</h2>
+    </header>
+    <main>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Type</th>
+                        <th>Uploaded On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resource in resources %}
+                    <tr>
+                        <td data-label="Filename">{{ resource.filename }}</td>
+                        <td data-label="Type">{{ resource.filetype }}</td>
+                        <td data-label="Uploaded On">{{ resource.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td data-label="Action">
+                            <a class="btn" href="{{ url_for('download_resource', filename=resource.filename) }}">Download</a>
+                            <form method="POST" action="{{ url_for('delete_resource', resource_id=resource.id) }}" onsubmit="return confirm('Are you sure you want to delete this resource?');">
+                                <button type="submit" class="btn btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align:center;">No resources uploaded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <footer>
+        &copy; 2025 Virtual Classroom | All Rights Reserved
+    </footer>
+</body>
+</html>
