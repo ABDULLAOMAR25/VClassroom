@@ -292,7 +292,7 @@ def get_token():
     return jsonify({'token': token.to_jwt()})
 
 @app.route('/upload', methods=['GET', 'POST'])
-def upload():
+def upload_resources():
     if 'user_id' not in session or session.get('role') != 'teacher':
         flash("Access denied. Teachers only.")
         return redirect(url_for('login'))
