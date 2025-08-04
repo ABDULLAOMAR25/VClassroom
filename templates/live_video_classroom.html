@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Video Classroom</title>
-
+<script src="https://cdn.jsdelivr.net/npm/@livekit/client/dist/livekit-client.umd.min.js"></script>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -47,7 +47,6 @@
     <div id="videos"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@livekit/client/dist/livekit-client.umd.min.js"></script>
 <script>
 async function joinRoom() {
     const roomName = document.getElementById('room').value.trim();

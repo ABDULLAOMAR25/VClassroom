@@ -7,7 +7,9 @@ import hashlib  # For password hashing
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///classes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+
+# Prevent objects from expiring after commit so you can use them after session commit
+db = SQLAlchemy(app, session_options={"expire_on_commit": False})
 
 # --- Models ---
 class ClassSession(db.Model):
@@ -39,17 +41,32 @@ class Attendance(db.Model):
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# --- DB creation and sample data ---
+# --- Default users to initialize ---
+defaults = [
+    {"username": "Abdulla", "email": "mhatariabdulla@gmail.com", "password": "admin123", "role": "admin"},
+    {"username": "Omar", "email": "teacher1@example.com", "password": "teacher123", "role": "teacher"},
+    {"username": "student1", "email": "student1@example.com", "password": "student123", "role": "student"}
+]
+
+# --- Create tables and default users ---
 with app.app_context():
     db.create_all()
 
-    # Create sample users with hashed passwords
-    user1 = User(username='teacher1', email='teacher1@example.com',
-                 password=hash_password('pass123'), role='teacher')
-    user2 = User(username='student1', email='student1@example.com',
-                 password=hash_password('pass123'), role='student')
-    admin_user = User(username='admin', email='admin@example.com',
-                      password=hash_password('admin123'), role='admin')
+    created_users = []
+    for user_data in defaults:
+        user = User.query.filter_by(email=user_data["email"]).first()
+        if not user:
+            user = User(
+                username=user_data["username"],
+                email=user_data["email"],
+                password=hash_password(user_data["password"]),
+                role=user_data["role"]
+            )
+            db.session.add(user)
+            created_users.append(user)
+    db.session.commit()
 
-    db.session.add_all([user1, user2, admin_user])
-print("✅ Database 'classes.db' created with hashed passwords and admin user.")
+# Print users that were created (or loaded) - works because expire_on_commit=False
+print("✅ Database initialized. Default users:")
+for user in created_users:
+    print(f"- {user.username} ({user.role})")
