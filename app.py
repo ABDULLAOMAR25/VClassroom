@@ -25,7 +25,7 @@ load_dotenv(dotenv_path=Path('.') / '.env')
 
 # --- Flask App Setup ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.secret_key = "your_generated_secret_key_here"
+app.secret_key = "203d8000359821cad3fd6d7f3f1926817af41555dfdece94"
 
 # --- Logging Setup ---
 if not os.path.exists('logs'):
@@ -204,7 +204,7 @@ def student_sessions():
 
     sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
     return render_template('student_sessions.html', sessions=sessions)
-
+b
 @app.route('/end-session/<int:session_id>')
 def end_session(session_id):
     session_obj = ClassSession.query.get_or_404(session_id)
