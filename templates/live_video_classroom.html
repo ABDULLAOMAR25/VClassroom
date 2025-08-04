@@ -1,52 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Video Classroom</title>
 <script src="https://cdn.jsdelivr.net/npm/@livekit/client/dist/livekit-client.umd.min.js"></script>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f8f9fa;
-        padding: 20px;
-    }
-    .container {
-        max-width: 800px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    input, button {
-        padding: 10px;
-        font-size: 16px;
-        margin: 5px 0;
-        width: 100%;
-    }
-    #videos {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    video {
-        width: 48%;
-        border: 2px solid #007bff;
-        border-radius: 10px;
-    }
-</style>
-</head>
-<body>
-<div class="container">
-    <h2>Join Live Video Classroom</h2>
-    <input type="text" id="room" placeholder="Enter Room Name" />
-    <button onclick="joinRoom()">Join Room</button>
-    <div id="status" style="margin-top: 10px; color: green;"></div>
-    <div id="videos"></div>
-</div>
-
 <script>
 async function joinRoom() {
     const roomName = document.getElementById('room').value.trim();
@@ -76,7 +28,7 @@ async function joinRoom() {
         statusDiv.textContent = 'Token received. Connecting...';
 
         // 2. Connect to LiveKit
-        const livekitRoom = new LivekitClient.Room();
+        const livekitRoom = new Livekit.Room();
         livekitRoom.on('trackSubscribed', (track, publication, participant) => {
             if (track.kind === 'video') {
                 const videoEl = track.attach();
@@ -107,5 +59,3 @@ async function joinRoom() {
     }
 }
 </script>
-</body>
-</html>
