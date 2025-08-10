@@ -164,13 +164,8 @@ def admin_dashboard():
 
 @app.route('/sessions')
 def sessions():
-    try:
-        all_sessions = ClassSession.query.order_by(ClassSession.id.desc()).all()
-        return render_template('sessions.html', sessions=all_sessions)
-    except Exception as e:
-        app.logger.exception("Error loading sessions")
-        flash("Failed to load sessions.", "danger")
-        return redirect(url_for('index'))
+    all_sessions = ClassSession.query.order_by(ClassSession.is_live.desc(), ClassSession.id.desc()).all()
+    return render_template('sessions.html', sessions=all_sessions)
 
 @app.route('/create_session', methods=['GET', 'POST'])
 def create_session():

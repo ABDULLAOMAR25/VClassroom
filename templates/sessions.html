@@ -28,15 +28,15 @@
 
     .top-link {
       display: block;
-      width: fit-content;
       margin: 0 auto 20px auto;
       padding: 10px 16px;
       background-color: #1abc9c;
-      color: white;
+      color: #fff;
       border-radius: 6px;
       font-weight: bold;
       text-align: center;
       text-decoration: none;
+      transition: background-color 0.3s ease;
     }
 
     .top-link:hover {
@@ -57,11 +57,12 @@
       color: #2c3e50;
       font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
 
     .filter-buttons button.active {
       background-color: #1abc9c;
-      color: white;
+      color: #fff;
     }
 
     table {
@@ -69,7 +70,7 @@
       max-width: 900px;
       margin: 0 auto 30px auto;
       border-collapse: collapse;
-      background-color: white;
+      background-color: #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       border-radius: 10px;
       overflow: hidden;
@@ -77,7 +78,7 @@
 
     thead {
       background-color: #1abc9c;
-      color: white;
+      color: #fff;
     }
 
     th, td {
@@ -115,7 +116,7 @@
 
       tr {
         margin-bottom: 15px;
-        background-color: white;
+        background-color: #fff;
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         padding: 10px;
@@ -134,68 +135,72 @@
   </style>
 </head>
 <body>
-  <h1>Online Classroom Sessions</h1>
 
-  <a href="{{ url_for('create_session') }}" class="top-link">➕ Create New Session</a>
+  <header>
+    <h1>Online Classroom Sessions</h1>
+    <a href="{{ url_for('create_session') }}" class="top-link">➕ Create New Session</a>
+  </header>
 
-  <div class="filter-buttons">
-    <button class="active" onclick="filterSessions('all')">All</button>
-    <button onclick="filterSessions('live')">Live</button>
-    <button onclick="filterSessions('upcoming')">Upcoming</button>
-    <button onclick="filterSessions('ended')">Ended</button>
-  </div>
+  <section class="filter-buttons">
+    <button class="active" onclick="filterSessions('all', event)">All</button>
+    <button onclick="filterSessions('live', event)">Live</button>
+    <button onclick="filterSessions('upcoming', event)">Upcoming</button>
+    <button onclick="filterSessions('ended', event)">Ended</button>
+  </section>
 
-  {% if sessions %}
-  <table>
-    <thead>
-      <tr>
-        <th>Class Name</th>
-        <th>Status</th>
-        <th>Start Time</th>
-        <th>End Time</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for session in sessions | sort(attribute='is_live', reverse=True) %}
-      {% set status = "live" if session.is_live else ("ended" if session.start_time and session.end_time else "upcoming") %}
-      <tr class="session-row" data-status="{{ status }}">
-        <td><strong>{{ session.class_name }}</strong></td>
-        <td>
-          {% if session.is_live %}
-            <span class="status-live">🟢 Live</span>
-          {% elif session.start_time and session.end_time %}
-            <span class="status-ended">⏹️ Ended</span>
-          {% else %}
-            <span class="status-not">🔴 Not Started</span>
-          {% endif %}
-        </td>
-        <td>{{ session.start_time if session.start_time else '—' }}</td>
-        <td>{{ session.end_time if session.end_time else '—' }}</td>
-        <td>
-          {% if session.is_live %}
-            <a href="{{ url_for('join_session', session_id=session.id) }}">Join</a> |
-            <a href="{{ url_for('end_session', session_id=session.id) }}">End</a>
-          {% elif session.start_time and session.end_time %}
-            <span style="color: gray;">View Only</span>
-          {% else %}
-            <a href="{{ url_for('start_session', session_id=session.id) }}">Start</a>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-    <p style="text-align:center;">No sessions available.</p>
-  {% endif %}
+  <main>
+    {% if sessions %}
+    <table>
+      <thead>
+        <tr>
+          <th>Class Name</th>
+          <th>Status</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in sessions | sort(attribute='is_live', reverse=True) %}
+        {% set status = "live" if session.is_live else ("ended" if session.start_time and session.end_time else "upcoming") %}
+        <tr class="session-row" data-status="{{ status }}">
+          <td><strong>{{ session.topic }}</strong></td>
+          <td>
+            {% if session.is_live %}
+              <span class="status-live">🟢 Live</span>
+            {% elif session.start_time and session.end_time %}
+              <span class="status-ended">⏹️ Ended</span>
+            {% else %}
+              <span class="status-not">🔴 Not Started</span>
+            {% endif %}
+          </td>
+          <td>{{ session.start_time if session.start_time else '—' }}</td>
+          <td>{{ session.end_time if session.end_time else '—' }}</td>
+          <td>
+            {% if session.is_live %}
+              <a href="{{ url_for('join_session', session_id=session.id) }}">Join</a> |
+              <a href="{{ url_for('end_session', session_id=session.id) }}">End</a>
+            {% elif session.start_time and session.end_time %}
+              <span style="color: gray;">View Only</span>
+            {% else %}
+              <a href="{{ url_for('start_session', session_id=session.id) }}">Start</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="text-align:center;">No sessions available.</p>
+    {% endif %}
+  </main>
 
   <footer>
     &copy; 2025 Virtual Classroom | All Rights Reserved
   </footer>
 
   <script>
-    function filterSessions(status) {
+    function filterSessions(status, event) {
       const rows = document.querySelectorAll(".session-row");
       const buttons = document.querySelectorAll(".filter-buttons button");
 
@@ -203,13 +208,10 @@
       event.target.classList.add("active");
 
       rows.forEach(row => {
-        if (status === "all" || row.dataset.status === status) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
+        row.style.display = (status === "all" || row.dataset.status === status) ? "" : "none";
       });
     }
   </script>
+
 </body>
 </html>
