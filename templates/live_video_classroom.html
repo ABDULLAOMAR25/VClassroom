@@ -1,331 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Live Video Classroom</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Video Classroom</title>
 
-  <!-- LiveKit Client Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/livekit-client/2.14.0/livekit-client.umd.min.js"></script>
+  <!-- LiveKit Client Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/livekit-client/2.14.0/livekit-client.umd.min.js"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #f0f2f5;
-    }
-
-    header {
-      padding: 1rem;
-      background-color: #2d3436;
-      color: white;
-      text-align: center;
-      font-size: 1.5rem;
-    }
-
-    #main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* Left panel */
-    #left-panel {
-      flex: 3;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #video-container {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    video {
-      width: 45%;
-      max-width: 480px;
-      border-radius: 12px;
-      background: black;
-    }
-
-    /* Controls */
-    #controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    #controls button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background-color: #0984e3;
-      color: white;
-      transition: background-color 0.3s;
-    }
-
-    #controls button:hover {
-      background-color: #74b9ff;
-    }
-
-    /* Right panel */
-    #right-panel {
-      flex: 1;
-      background: #fff;
-      border-left: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Participants list */
-    #participants {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      border-bottom: 1px solid #ccc;
-    }
-
-    /* Chat */
-    #chat {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-    }
-
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      padding: 10px;
-      background-color: #fafafa;
-    }
-
-    #chat-input {
-      display: flex;
-      gap: 10px;
-    }
-
-    #chat-input input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    #chat-input button {
-      padding: 10px;
-      background-color: #00b894;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f0f2f5;
+    }
+    header {
+      padding: 1rem;
+      background-color: #2d3436;
+      color: white;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    #left-panel {
+      flex: 3;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    #video-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    video {
+      width: 45%;
+      max-width: 480px;
+      border-radius: 12px;
+      background: black;
+    }
+    #controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    #controls button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #0984e3;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    #controls button:hover {
+      background-color: #74b9ff;
+    }
+    #right-panel {
+      flex: 1;
+      background: #fff;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+    }
+    #participants {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      border-bottom: 1px solid #ccc;
+    }
+    #chat {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background-color: #fafafa;
+      white-space: pre-wrap;
+    }
+    #chat-input {
+      display: flex;
+      gap: 10px;
+    }
+    #chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #chat-input button {
+      padding: 10px;
+      background-color: #00b894;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
-  <header>Live Video Classroom - Room {{ room_name }}</header>
+  <header>Live Video Classroom - Room {{ room_name }}</header>
 
-  <div id="main">
-    <!-- Left Panel -->
-    <div id="left-panel">
-      <div id="video-container">
-        <video id="local-video" autoplay muted playsinline></video>
-      </div>
-      <div id="controls">
-        <button id="btnCamera">📷 Camera</button>
-        <button id="btnMic">🎤 Mic On</button>
-        <button id="btnRaiseHand">✋ Raise Hand</button>
-      </div>
-    </div>
+  <div id="main">
+    <div id="left-panel">
+      <div id="video-container">
+        <video id="local-video" autoplay muted playsinline></video>
+      </div>
+      <div id="controls">
+        <button id="btnCamera">📷 Camera</button>
+        <button id="btnMic">🎤 Mic On</button>
+        <button id="btnRaiseHand">✋ Raise Hand</button>
+      </div>
+    </div>
 
-    <!-- Right Panel -->
-    <div id="right-panel">
-      <div id="participants">
-        <strong>Participants:</strong>
-        <ul id="participant-list"></ul>
-      </div>
-      <div id="chat">
-        <div id="messages"></div>
-        <div id="chat-input">
-          <input type="text" id="messageBox" placeholder="Type a message..." />
-          <button id="btnSend">Send</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div id="right-panel">
+      <div id="participants">
+        <strong>Participants:</strong>
+        <ul id="participant-list"></ul>
+      </div>
+      <div id="chat">
+        <div id="messages"></div>
+        <div id="chat-input">
+          <input type="text" id="messageBox" placeholder="Type a message..." autocomplete="off" />
+          <button id="btnSend">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <script>
-    // Room and identity setup
-    let roomName = "{{ room_name }}" || window.location.pathname.split("/").pop();
-    let identity = "{{ identity }}" || "user-" + Math.floor(Math.random() * 1000);
+  <script>
+    // Room and identity from Flask/Jinja or fallback
+    let roomName = "{{ room_name }}" || window.location.pathname.split("/").pop();
+    let identity = "{{ identity }}" || "user-" + Math.floor(Math.random() * 1000);
 
-    let room;
-    let localTracks = [];
-    let micEnabled = true;
+    let room;
+    let localTracks = [];
+    let micEnabled = true;
 
-    /** Connect to LiveKit room */
-    async function connectToRoom() {
-      try {
-        // Fetch token & URL from backend
-        const res = await fetch("/get_token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room: roomName, identity })
-        });
+    /** Connect to LiveKit room */
+    async function connectToRoom() {
+      try {
+        const res = await fetch("/get_token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room: roomName, identity })
+        });
 
-        if (!res.ok) throw new Error("Failed to get token from server");
+        if (!res.ok) throw new Error("Failed to get token from server");
 
-        const { token, url } = await res.json();
-        if (!token || !url) throw new Error("Missing token or URL");
+        const { token, url } = await res.json();
+        if (!token || !url) throw new Error("Missing token or URL");
 
-        // Create room instance
-        room = new LivekitClient.Room();
+        room = new LivekitClient.Room();
 
-        // Handle track subscription
-        room.on("trackSubscribed", (track) => {
-          const el = track.attach();
-          if (track.kind === "video") {
-            Object.assign(el, { autoplay: true, playsInline: true });
-            Object.assign(el.style, {
-              borderRadius: "12px",
-              width: "45%",
-              background: "black"
-            });
-            document.getElementById("video-container").appendChild(el);
-          } else if (track.kind === "audio") {
-            el.style.display = "none";
-            document.body.appendChild(el);
-          }
-        });
+        // Subscribe and attach remote tracks
+        room.on("trackSubscribed", (track) => {
+          const el = track.attach();
+          if (track.kind === "video") {
+            Object.assign(el, { autoplay: true, playsInline: true });
+            Object.assign(el.style, {
+              borderRadius: "12px",
+              width: "45%",
+              background: "black"
+            });
+            document.getElementById("video-container").appendChild(el);
+          } else if (track.kind === "audio") {
+            el.style.display = "none";
+            document.body.appendChild(el);
+          }
+        });
 
-        // Update participant list
-        room.on("participantConnected", (p) => {
-          const li = document.createElement("li");
-          li.id = p.sid;
-          li.textContent = p.identity;
-          document.getElementById("participant-list").appendChild(li);
-        });
+        // Update participant list
+        room.on("participantConnected", (p) => {
+          const li = document.createElement("li");
+          li.id = p.sid;
+          li.textContent = p.identity;
+          document.getElementById("participant-list").appendChild(li);
+        });
 
-        room.on("participantDisconnected", (p) => {
-          const li = document.getElementById(p.sid);
-          if (li) li.remove();
-        });
+        room.on("participantDisconnected", (p) => {
+          const li = document.getElementById(p.sid);
+          if (li) li.remove();
+        });
 
-        room.on("disconnected", () => console.log("Room disconnected"));
+        room.on("disconnected", () => console.log("Room disconnected"));
 
-        // Handle raise-hand messages
-        room.on("dataReceived", (payload) => {
-          try {
-            const msg = JSON.parse(new TextDecoder().decode(payload));
-            if (msg.type === "raise-hand") {
-              const div = document.createElement("div");
-              div.textContent = `${msg.from} ✋ raised hand`;
-              const msgBox = document.getElementById("messages");
-              msgBox.appendChild(div);
-              msgBox.scrollTop = msgBox.scrollHeight;
-            }
-          } catch (err) {
-            console.error("Error parsing data message", err);
-          }
-        });
+        // Receive data (raise-hand and chat-message)
+        room.on("dataReceived", (payload) => {
+          try {
+            const msg = JSON.parse(new TextDecoder().decode(payload));
+            const msgBox = document.getElementById("messages");
+            if (msg.type === "raise-hand") {
+              const div = document.createElement("div");
+              div.textContent = `${msg.from} ✋ raised hand`;
+              msgBox.appendChild(div);
+              msgBox.scrollTop = msgBox.scrollHeight;
+            } else if (msg.type === "chat-message") {
+              // Avoid echo own message twice (already appended on send)
+              if (msg.from !== identity) {
+                const div = document.createElement("div");
+                div.textContent = `${msg.from}: ${msg.text}`;
+                msgBox.appendChild(div);
+                msgBox.scrollTop = msgBox.scrollHeight;
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing data message", e);
+          }
+        });
 
-        // Connect to room
-        await room.connect(url, token);
-        alert(`✅ Connected to LiveKit room: ${roomName} as ${identity}`);
-      } catch (err) {
-        alert(`❌ Error: ${err.message}`);
-        console.error("Connection error:", err);
-      }
-    }
+        await room.connect(url, token);
+        alert(`✅ Connected to LiveKit room: ${roomName} as ${identity}`);
+      } catch (err) {
+        alert(`❌ Error: ${err.message}`);
+        console.error("Connection error:", err);
+      }
+    }
 
-    /** Start camera & mic */
-    async function startCamera() {
-      try {
-        if (!room) return alert("Not connected to room");
+    /** Start camera and mic */
+    async function startCamera() {
+      try {
+        if (!room) return alert("Not connected to room");
 
-        localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
+        localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
 
-        for (const track of localTracks) {
-          await room.localParticipant.publishTrack(track);
+        for (const track of localTracks) {
+          await room.localParticipant.publishTrack(track);
 
-          if (track.kind === "video") {
-            const videoEl = track.attach();
-            Object.assign(videoEl, { id: "local-video", autoplay: true, muted: true, playsInline: true });
-            Object.assign(videoEl.style, {
-              borderRadius: "12px",
-              width: "45%",
-              background: "black"
-            });
+          if (track.kind === "video") {
+            const videoEl = track.attach();
+            Object.assign(videoEl, { id: "local-video", autoplay: true, muted: true, playsInline: true });
+            Object.assign(videoEl.style, {
+              borderRadius: "12px",
+              width: "45%",
+              background: "black"
+            });
 
-            const container = document.getElementById("video-container");
-            const oldVideo = document.getElementById("local-video");
-            if (oldVideo) oldVideo.remove();
-            container.appendChild(videoEl);
-          }
-        }
-        console.log("✅ Camera and mic started");
-      } catch (err) {
-        console.error("❌ Camera error:", err);
-        alert("Could not start camera: " + err.message);
-      }
-    }
+            const container = document.getElementById("video-container");
+            const oldVideo = document.getElementById("local-video");
+            if (oldVideo) oldVideo.remove();
 
-    /** Toggle microphone */
-    function toggleMic() {
-      const audioTrack = localTracks.find(t => t.kind === "audio");
-      if (!audioTrack) return;
-      micEnabled = !micEnabled;
-      micEnabled ? audioTrack.enable() : audioTrack.disable();
-      document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
-    }
+            container.appendChild(videoEl);
+          }
+        }
+        console.log("✅ Camera and mic started");
+      } catch (err) {
+        console.error("❌ Camera error:", err);
+        alert("Could not start camera: " + err.message);
+      }
+    }
 
-    /** Raise hand */
-    function raiseHand() {
-      if (!room) return;
-      room.localParticipant.publishData(
-        new TextEncoder().encode(JSON.stringify({ type: "raise-hand", from: identity })),
-        { reliable: true }
-      );
-    }
+    /** Toggle microphone on/off */
+    function toggleMic() {
+      const audioTrack = localTracks.find(t => t.kind === "audio");
+      if (!audioTrack) return;
+      micEnabled = !micEnabled;
+      micEnabled ? audioTrack.enable() : audioTrack.disable();
+      document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
+    }
 
-    /** Local chat message (not synced) */
-    function sendMessage() {
-      const input = document.getElementById("messageBox");
-      if (!input.value.trim()) return;
-      const div = document.createElement("div");
-      div.textContent = `${identity}: ${input.value}`;
-      const msgBox = document.getElementById("messages");
-      msgBox.appendChild(div);
-      input.value = "";
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
+    /** Raise hand event - broadcast via LiveKit data channel */
+    function raiseHand() {
+      if (!room) return;
+      room.localParticipant.publishData(
+        new TextEncoder().encode(JSON.stringify({ type: "raise-hand", from: identity })),
+        { reliable: true }
+      );
+    }
 
-    // Event listeners
-    document.getElementById("btnCamera").onclick = startCamera;
-    document.getElementById("btnMic").onclick = toggleMic;
-    document.getElementById("btnRaiseHand").onclick = raiseHand;
-    document.getElementById("btnSend").onclick = sendMessage;
+    /** Send chat message - broadcast live */
+    function sendMessage() {
+      const input = document.getElementById("messageBox");
+      const msgBox = document.getElementById("messages");
+      const messageText = input.value.trim();
+      if (!messageText) return;
 
-    // Auto-connect on load
-    connectToRoom();
-  </script>
+      // Append locally immediately
+      const div = document.createElement("div");
+      div.textContent = `${identity} (You): ${messageText}`;
+      msgBox.appendChild(div);
+      msgBox.scrollTop = msgBox.scrollHeight;
+
+      // Send to others via LiveKit data channel
+      if (room) {
+        const payload = {
+          type: "chat-message",
+          from: identity,
+          text: messageText
+        };
+        room.localParticipant.publishData(
+          new TextEncoder().encode(JSON.stringify(payload)),
+          { reliable: true }
+        );
+      }
+      input.value = "";
+    }
+
+    // Attach button listeners
+    document.getElementById("btnCamera").onclick = startCamera;
+    document.getElementById("btnMic").onclick = toggleMic;
+    document.getElementById("btnRaiseHand").onclick = raiseHand;
+    document.getElementById("btnSend").onclick = sendMessage;
+
+    // Connect immediately on page load
+    connectToRoom();
+  </script>
 </body>
 </html>
