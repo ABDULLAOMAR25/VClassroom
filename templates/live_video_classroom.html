@@ -121,7 +121,6 @@
     <div id="left-panel">
       <div id="video-container">
         <video id="local-video" autoplay muted playsinline></video>
-        <video id="remote-video" autoplay playsinline></video>
       </div>
       <div id="controls">
         <button id="btnCamera">📷 Camera</button>
@@ -145,13 +144,13 @@
   </div>
 
   <script>
-    // ✅ Get room name from Jinja or fallback to URL
+    // Room name from Flask/Jinja or fallback to last URL segment
     let roomName = "{{ room_name }}";
     if (!roomName || roomName === "") {
-      roomName = window.location.pathname.split("/").pop(); // e.g., /join_session/1 → "1"
+      roomName = window.location.pathname.split("/").pop();
     }
 
-    // ✅ Identity from Jinja or auto-generate
+    // User identity from Flask/Jinja or fallback random ID
     let identity = "{{ identity }}";
     if (!identity || identity === "") {
       identity = "user-" + Math.floor(Math.random() * 1000);
@@ -163,35 +162,39 @@
 
     async function connectToRoom() {
       try {
-        // ✅ Request token from backend
+        // Request LiveKit token and url from backend
         const res = await fetch("/get_token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room: roomName, identity: identity })
+          body: JSON.stringify({ room: roomName, identity: identity }),
         });
 
         if (!res.ok) throw new Error("Failed to get token from server");
 
         const { token, url } = await res.json();
-        if (!token || !url) throw new Error("Token or URL missing from server response");
+        if (!token || !url) throw new Error("Token or URL missing in server response");
 
-        // ✅ Create LiveKit room
+        // Create LiveKit room instance
         room = new LivekitClient.Room();
 
-        // Handle remote video tracks
+        // Subscribe and attach remote tracks (video and audio)
         room.on("trackSubscribed", (track, publication, participant) => {
+          const attachedEl = track.attach();
           if (track.kind === "video") {
-            const videoEl = track.attach();
-            videoEl.autoplay = true;
-            videoEl.playsInline = true;
-            videoEl.style.borderRadius = "12px";
-            videoEl.style.width = "45%";
-            videoEl.style.background = "black";
-            document.getElementById("video-container").appendChild(videoEl);
+            attachedEl.autoplay = true;
+            attachedEl.playsInline = true;
+            attachedEl.style.borderRadius = "12px";
+            attachedEl.style.width = "45%";
+            attachedEl.style.background = "black";
+            document.getElementById("video-container").appendChild(attachedEl);
+          } else if (track.kind === "audio") {
+            // Audio element plays sound but is hidden
+            attachedEl.style.display = "none";
+            document.body.appendChild(attachedEl);
           }
         });
 
-        // Handle participants list
+        // Update participant list on connect and disconnect
         room.on("participantConnected", participant => {
           const li = document.createElement("li");
           li.id = participant.sid;
@@ -204,11 +207,12 @@
           if (li) li.remove();
         });
 
+        // Log disconnection
         room.on("disconnected", () => {
           console.log("Room disconnected");
         });
 
-        // === NEW: Receive data messages for raise hand (and other types) ===
+        // Receive "raise-hand" messages via LiveKit data channel
         room.on("dataReceived", (payload, participant) => {
           try {
             const message = JSON.parse(new TextDecoder().decode(payload));
@@ -220,12 +224,12 @@
               msgBox.scrollTop = msgBox.scrollHeight;
             }
           } catch (e) {
-            console.error('Error parsing data message', e);
+            console.error("Error parsing data message", e);
           }
         });
 
-        // ✅ Connect to LiveKit with token and url
         await room.connect(url, token);
+
         alert("✅ Connected to LiveKit room: " + roomName + " as " + identity);
       } catch (err) {
         alert("❌ Error: " + err.message);
@@ -237,6 +241,7 @@
       try {
         if (!room) return alert("Not connected to room");
 
+        // Create and publish local audio and video tracks
         localTracks = await LivekitClient.createLocalTracks({ audio: true, video: true });
 
         for (const track of localTracks) {
@@ -246,15 +251,15 @@
             const videoEl = track.attach();
             videoEl.id = "local-video";
             videoEl.autoplay = true;
-            videoEl.muted = true; // Prevent feedback
+            videoEl.muted = true; // mute to avoid echo
             videoEl.playsInline = true;
             videoEl.style.borderRadius = "12px";
             videoEl.style.width = "45%";
             videoEl.style.background = "black";
 
             const container = document.getElementById("video-container");
-            const old = document.getElementById("local-video");
-            if (old) old.remove();
+            const oldVideo = document.getElementById("local-video");
+            if (oldVideo) oldVideo.remove();
 
             container.appendChild(videoEl);
           }
@@ -274,7 +279,6 @@
       document.getElementById("btnMic").textContent = micEnabled ? "🎤 Mic On" : "🎤 Mic Off";
     }
 
-    // === NEW raiseHand function sends "raise-hand" event via LiveKit data channel ===
     function raiseHand() {
       if (!room) return;
       room.localParticipant.publishData(
@@ -283,6 +287,7 @@
       );
     }
 
+    // Basic local chat messages (not synchronized)
     function sendMessage() {
       const input = document.getElementById("messageBox");
       if (!input.value.trim()) return;
@@ -294,13 +299,13 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    // ✅ Button bindings
+    // Attach button listeners
     document.getElementById("btnCamera").onclick = startCamera;
     document.getElementById("btnMic").onclick = toggleMic;
     document.getElementById("btnRaiseHand").onclick = raiseHand;
     document.getElementById("btnSend").onclick = sendMessage;
 
-    // ✅ Connect on page load
+    // Connect immediately on page load
     connectToRoom();
   </script>
 </body>
