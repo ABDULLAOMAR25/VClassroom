@@ -278,10 +278,11 @@ def get_token():
 
     api_key = os.getenv('LIVEKIT_API_KEY')
     api_secret = os.getenv('LIVEKIT_API_SECRET')
+    livekit_url = os.getenv('LIVEKIT_URL')
 
-    token = api.AccessToken(api_key, api_secret) \
-        .with_identity(identity) \
-        .with_name(identity) \
+    token = api.AccessToken(api_key, api_secret)\
+        .with_identity(identity)\
+        .with_name(identity)\
         .with_grants(api.VideoGrants(
             room_join=True,
             room=room_name,
@@ -289,7 +290,7 @@ def get_token():
             can_subscribe=True
         ))
 
-    return jsonify({'token': token.to_jwt()})
+    return jsonify({'token': token.to_jwt(), 'url': livekit_url})
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_resources():
